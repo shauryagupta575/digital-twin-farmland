@@ -1,0 +1,17 @@
+{
+  "Wheat": {
+    "ideal_temp": "15°C to 25°C",
+    "water_needs": "Moderate. Critical at crown root initiation and flowering.",
+    "rain_warning": "Heavy rain during the ripening stage causes lodging and grain damage."
+  },
+  "Rice": {
+    "ideal_temp": "25°C to 35°C",
+    "water_needs": "High. Requires standing water for the majority of its growth.",
+    "rain_warning": "Highly resilient to rain, but extreme flooding can submerge young seedlings."
+  },
+  "Cotton": {
+    "ideal_temp": "21°C to 37°C",
+    "water_needs": "Low to moderate. Drought tolerant once established.",
+    "rain_warning": "Rain during the boll-opening stage is devastating and ruins fiber quality."
+  }
+}

@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Twin of Farmland for Predictive Farming</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f5f3ee;--bg2:#eceae4;--bg3:#e0ddd6;--card:#fff;
+  --border:rgba(50,40,20,.10);--border2:rgba(50,40,20,.18);
+  --text:#18140e;--text2:#56504a;--text3:#9a9080;
+  --green:#2b6e3a;--green2:#3ea352;--greenl:#e6f4ea;
+  --blue:#185fa5;--bluel:#e6f0fa;
+  --teal:#0f6e56;--teallight:#e1f5ee;
+  --amber:#b87010;--amberl:#fdf3e0;
+  --purple:#5a38a8;--purplel:#eeebfc;
+  --red:#c0392b;--redl:#fdecea;
+  --orange:#d4600a;--orangel:#fef0e6;
+  --soil:#8B6340;--soill:#f5ece3;
+  --r:14px;--rs:9px;
+  --shadow:0 2px 16px rgba(30,20,5,.07);--shadow2:0 8px 36px rgba(30,20,5,.13);
+  --font-d:'Playfair Display',serif;--font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:0 36px;height:66px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
+.hdr-logo{width:42px;height:42px;background:linear-gradient(135deg,#235c30,#4caf64);border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 3px 12px rgba(43,110,58,.28);flex-shrink:0}
+.hdr-title{font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text);letter-spacing:-.01em;line-height:1.2;margin-left:13px}
+.hdr-sub{font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:.09em;text-transform:uppercase;margin-top:1px}
+.hdr-badge{display:flex;align-items:center;gap:6px;background:var(--greenl);border:1px solid rgba(43,110,58,.18);padding:5px 14px;border-radius:20px;font-family:var(--font-m);font-size:9.5px;color:var(--green);letter-spacing:.06em;text-transform:uppercase}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+
+/* ── NAV TABS ── */
+.nav{background:var(--card);border-bottom:1px solid var(--border);display:flex;padding:0 36px;gap:4px;overflow-x:auto}
+.nav-btn{padding:14px 18px;font-family:var(--font-m);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2.5px solid transparent;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.nav-btn:hover{color:var(--text2)}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);background:none}
+
+/* ── HERO ── */
+.hero{background:#111a13;padding:60px 36px 52px;text-align:center;position:relative;overflow:hidden}
+.hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.hero-eyebrow{font-family:var(--font-m);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:rgba(110,220,130,.6);margin-bottom:16px;position:relative}
+.hero-title{font-family:var(--font-d);font-size:clamp(22px,3.8vw,46px);font-weight:800;color:#fff;line-height:1.12;letter-spacing:-.025em;margin-bottom:14px;max-width:780px;margin-left:auto;margin-right:auto;position:relative}
+.hero-title em{color:#72e08a;font-style:normal}
+.hero-desc{font-size:14px;color:rgba(255,255,255,.45);max-width:520px;margin:0 auto 36px;line-height:1.75;position:relative}
+.hero-stats{display:flex;justify-content:center;gap:44px;flex-wrap:wrap;position:relative}
+.hs-num{font-family:var(--font-d);font-size:28px;font-weight:800;color:#72e08a;line-height:1}
+.hs-lbl{font-family:var(--font-m);font-size:9px;color:rgba(255,255,255,.36);letter-spacing:.09em;text-transform:uppercase;margin-top:4px}
+
+/* ── PANELS ── */
+.panel-wrap{display:none;animation:fadeIn .3s ease}
+.panel-wrap.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.panel-inner{max-width:1200px;margin:0 auto;padding:36px 36px 60px}
+
+/* ── MODEL SECTION HEADER ── */
+.model-hdr{margin-bottom:28px}
+.model-hdr-tag{display:inline-block;font-family:var(--font-m);font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 12px;border-radius:20px;margin-bottom:8px;font-weight:500}
+.tag-green{background:var(--greenl);color:var(--green)}
+.tag-blue{background:var(--bluel);color:var(--blue)}
+.tag-teal{background:var(--teallight);color:var(--teal)}
+.tag-purple{background:var(--purplel);color:var(--purple)}
+.model-hdr-title{font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--text);letter-spacing:-.015em;margin-bottom:6px}
+.model-hdr-desc{font-size:13.5px;color:var(--text2);line-height:1.65;max-width:640px}
+
+/* ── FORM GRID ── */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.form-input,.form-select{padding:9px 12px;border:1px solid var(--border2);border-radius:9px;background:var(--card);color:var(--text);font-family:var(--font-b);font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s;width:100%}
+.form-input:focus,.form-select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(43,110,58,.10)}
+.form-select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a9080' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+
+/* ── SUBMIT BUTTON ── */
+.submit-btn{padding:13px 32px;border-radius:10px;font-family:var(--font-m);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;border:none;transition:filter .2s,transform .15s;display:inline-flex;align-items:center;gap:8px}
+.submit-btn:hover{filter:brightness(1.1);transform:scale(1.01)}
+.submit-btn:active{transform:scale(.97)}
+.submit-btn:disabled{opacity:.55;cursor:wait;transform:none}
+.btn-green{background:var(--green);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-purple{background:var(--purple);color:#fff}
+
+/* ── RESULT BOX ── */
+.result-box{margin-top:28px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);display:none}
+.result-box.show{display:block;animation:fadeIn .35s ease}
+.result-header{padding:18px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.result-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ri-green{background:var(--greenl)}.ri-blue{background:var(--bluel)}.ri-teal{background:var(--teallight)}.ri-purple{background:var(--purplel)}
+.result-label{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.result-value{font-family:var(--font-d);font-size:22px;font-weight:700;color:var(--text)}
+.result-body{padding:20px 24px}
+.result-body p{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:8px}
+.result-body p:last-child{margin-bottom:0}
+.result-body strong{color:var(--text);font-weight:600}
+.result-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{padding:5px 12px;border-radius:20px;font-family:var(--font-m);font-size:10px;letter-spacing:.05em;font-weight:500}
+.chip-green{background:var(--greenl);color:var(--green);border:1px solid rgba(43,110,58,.2)}
+.chip-blue{background:var(--bluel);color:var(--blue);border:1px solid rgba(24,95,165,.2)}
+.chip-amber{background:var(--amberl);color:var(--amber);border:1px solid rgba(184,112,16,.2)}
+.chip-red{background:var(--redl);color:var(--red);border:1px solid rgba(192,57,43,.2)}
+
+/* ── LOADING SPINNER ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SMARTFARM / WATERTWIN EMBED ── */
+.embed-container{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+
+/* WATERTWIN internals (ported CSS) */
+.wt-root{--bg:#f5f2eb;--bg2:#ede9de;--bg3:#e4dfd2;--bg4:#d8d2c3;--card:#faf8f3;--border:rgba(80,60,20,.10);--border2:rgba(80,60,20,.18);--text:#1e1a10;--text2:#5a5240;--text3:#9a8e72;--green:#2d7a3a;--green2:#3fa050;--greenl:#e8f5eb;--amber:#c97c0a;--amberl:#fdf3e0;--red:#c0392b;--redl:#fdecea;--orange:#d4600a;--orangel:#fef0e6;--blue:#1a6fa8;--bluel:#e8f2fa;--soil:#8B6340;--soill:#f5ece3;--purple:#6b3fa0;--purplel:#f0eaf8;--font-d:'Baloo 2',cursive;--font-b:'DM Sans',sans-serif;--font-m:'DM Mono',monospace;--r:12px;--rs:8px;--shadow:0 2px 12px rgba(80,60,20,.08);--shadow2:0 4px 24px rgba(80,60,20,.12);background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px}
+
+/* ── SMARTFARM AI chat ── */
+.sf-wrap{display:grid;grid-template-columns:280px 1fr;min-height:600px}
+.sf-sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 18px;display:flex;flex-direction:column;gap:16px}
+.sf-sidebar-title{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.sf-main{display:flex;flex-direction:column;background:var(--card)}
+.sf-city-bar{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center}
+.sf-city-select{flex:1}
+.sf-weather-strip{padding:14px 20px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sf-wx{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;text-align:center}
+.sf-wx-val{font-family:var(--font-d);font-size:17px;font-weight:700;color:var(--text)}
+.sf-wx-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.sf-chat-area{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;min-height:320px;max-height:400px}
+.sf-msg{max-width:80%;padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.65}
+.sf-msg.user{background:var(--green);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.sf-msg.ai{background:var(--bg2);color:var(--text);align-self:flex-start;border-bottom-left-radius:4px;border:1px solid var(--border)}
+.sf-msg.ai strong{color:var(--green)}
+.sf-pills{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap}
+.sf-pill{padding:6px 13px;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:11.5px;color:var(--text2);cursor:pointer;transition:all .18s;font-family:var(--font-m)}
+.sf-pill:hover{background:var(--greenl);border-color:rgba(43,110,58,.3);color:var(--green)}
+.sf-input-row{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px}
+.sf-input{flex:1;padding:9px 14px;border:1px solid var(--border2);border-radius:9px;background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:13px;outline:none}
+.sf-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(43,110,58,.08)}
+.sf-send{padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:9px;cursor:pointer;font-family:var(--font-m);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;transition:filter .2s;flex-shrink:0}
+.sf-send:hover{filter:brightness(1.1)}
+.sf-alert{padding:10px 16px;border-radius:var(--rs);font-size:12.5px;margin-bottom:12px;border-left:3px solid}
+.sf-alert.info{background:var(--bluel);color:var(--blue);border-color:var(--blue)}
+.sf-alert.warn{background:var(--amberl);color:var(--amber);border-color:var(--amber)}
+.sf-alert.danger{background:var(--redl);color:var(--red);border-color:var(--red)}
+.sf-alert.good{background:var(--greenl);color:var(--green);border-color:var(--green)}
+
+/* ── WATERTWIN (inline) ── */
+.wt-layout{display:grid;grid-template-columns:300px 1fr;min-height:640px}
+.wt-sidebar{background:#faf8f3;border-right:1px solid rgba(80,60,20,.10);padding:18px 15px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;max-height:700px}
+.wt-main{padding:20px 22px;overflow-y:auto;max-height:700px;background:#f5f2eb;display:flex;flex-direction:column;gap:16px}
+.wt-sec-head{font-family:var(--font-m);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.wt-sec-head::after{content:'';flex:1;height:1px;background:rgba(80,60,20,.10)}
+.wt-region-sel,.wt-crop-sel{width:100%;padding:7px 28px 7px 10px;background:#f5f2eb;border:1px solid rgba(80,60,20,.12);border-radius:var(--rs);color:#1e1a10;font-family:var(--font-b);font-size:12.5px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a8e72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.wt-crop-sel:focus,.wt-region-sel:focus{border-color:#2d7a3a}
+.wt-moisture-big{font-family:'Playfair Display',serif;font-size:48px;font-weight:800;letter-spacing:-.03em;line-height:1;text-align:center;transition:color .3s}
+.wt-slider{width:100%;height:5px;border-radius:3px;background:#d8d2c3;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+.wt-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#2d7a3a;border:3px solid #faf8f3;box-shadow:0 1px 4px rgba(45,122,58,.4);cursor:pointer}
+.wt-metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.wt-mc{background:#faf8f3;border:1px solid rgba(80,60,20,.10);border-radius:12px;padding:12px 14px;box-shadow:0 2px 8px rgba(80,60,20,.06)}
+.wt-mc-label{font-family:var(--font-m);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:#9a8e72;margin-bottom:5px}
+.wt-mc-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#1e1a10}
+.wt-mc-sub{font-size:10px;color:#9a8e72;margin-top:2px}
+.wt-alert{border-radius:var(--r);padding:14px 18px;border-left:5px solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid;transition:all .3s}
+.wt-alert.safe{background:#e8f5eb;border-color:#2d7a3a}
+.wt-alert.low{background:#fdf3e0;border-color:#c97c0a}
+.wt-alert.high{background:#fef0e6;border-color:#d4600a}
+.wt-alert.critical{background:#fdecea;border-color:#c0392b}
+.wt-twin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.wt-tc{background:#faf8f3;border:1px solid rgba(80,60,20,.10);border-radius:12px;padding:12px;text-align:center;box-shadow:0 2px 8px rgba(80,60,20,.06)}
+.wt-tc-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:#9a8e72;margin-bottom:6px}
+.wt-tc-val{font-family:'Playfair Display',serif;font-size:24px;font-weight:800;letter-spacing:-.02em;transition:color .3s}
+.wt-pill{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:20px;font-family:var(--font-m);font-size:9px;letter-spacing:.04em;text-transform:uppercase;font-weight:500;border:1px solid}
+.wt-safe{background:#e8f5eb;color:#2d7a3a;border-color:rgba(45,122,58,.3)}
+.wt-low{background:#fdf3e0;color:#c97c0a;border-color:rgba(201,124,10,.3)}
+.wt-high{background:#fef0e6;color:#d4600a;border-color:rgba(212,96,10,.3)}
+.wt-critical{background:#fdecea;color:#c0392b;border-color:rgba(192,57,43,.3)}
+.wt-fcst-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.wt-fcst-card{flex-shrink:0;background:#ede9de;border:1px solid rgba(80,60,20,.10);border-radius:8px;padding:8px 10px;text-align:center;min-width:62px}
+.wt-fcst-day{font-family:var(--font-m);font-size:9px;color:#9a8e72;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.wt-chart-wrap{position:relative;height:160px}
+.wt-panel{background:#faf8f3;border:1px solid rgba(80,60,20,.10);border-radius:12px;padding:16px 18px;box-shadow:0 2px 8px rgba(80,60,20,.06)}
+.wt-panel-title{font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#1e1a10;margin-bottom:12px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:760px){
+  .hdr{padding:0 16px}.nav{padding:0 16px}.panel-inner{padding:24px 16px 48px}
+  .form-grid{grid-template-columns:1fr 1fr}
+  .sf-wrap{grid-template-columns:1fr}
+  .sf-sidebar{display:none}
+  .wt-layout{grid-template-columns:1fr}
+  .wt-sidebar{max-height:none}
+  .wt-metric-row{grid-template-columns:repeat(2,1fr)}
+  .wt-twin-row{grid-template-columns:repeat(2,1fr)}
+  .hero{padding:44px 16px 40px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div style="display:flex;align-items:center">
+    <div class="hdr-logo">🌿</div>
+    <div style="margin-left:13px">
+      <div class="hdr-title">Digital Twin of Farmland</div>
+      <div class="hdr-sub">Predictive Farming Intelligence Platform</div>
+    </div>
+  </div>
+  <div class="hdr-badge"><span class="live-dot"></span>4 Models Live</div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPanel('home',this)">🏠 Home</button>
+  <button class="nav-btn" onclick="showPanel('smartfarm',this)">⚡ Weather Risk</button>
+  <button class="nav-btn" onclick="showPanel('fertilizer',this)">🧪 Fertilizer</button>
+  <button class="nav-btn" onclick="showPanel('watertwin',this)">💧 WaterTwin</button>
+  <button class="nav-btn" onclick="showPanel('yield',this)">🌾 Crop Yield</button>
+</nav>
+
+<!-- API KEY BANNER — only needed for Weather Risk AI chat -->
+<div style="background:#1a1a2e;border-bottom:1px solid rgba(90,56,168,.35);padding:9px 36px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <span style="font-family:'DM Mono',monospace;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:rgba(167,139,240,.8);flex-shrink:0">🔑 API Key</span>
+  <span style="font-family:'DM Sans',sans-serif;font-size:11px;color:rgba(255,255,255,.35);flex-shrink:0">Required only for ⚡ Weather Risk AI chat — all other models work without it</span>
+  <input id="api-key-input" type="password" placeholder="sk-ant-api03-… (optional)" style="flex:1;min-width:220px;padding:6px 12px;border:1px solid rgba(90,56,168,.4);border-radius:8px;background:rgba(255,255,255,.06);color:#e0e0e0;font-family:'DM Mono',monospace;font-size:12px;outline:none" oninput="saveApiKey(this.value)">
+  <span id="api-key-status" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.3)">Not set</span>
+  <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-family:'DM Mono',monospace;font-size:10px;color:rgba(167,139,240,.65);text-decoration:none;white-space:nowrap">Get key →</a>
+</div>
+<div id="panel-home" class="panel-wrap active">
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-eyebrow">Machine Learning · Digital Twin · Predictive Analytics</div>
+    <h1 class="hero-title">Digital Twin of Farmland<br>for <em>Predictive Farming</em></h1>
+    <p class="hero-desc">Four AI models — fully integrated, running live in your browser. No setup, no installs. Click any model in the top navigation to get started.</p>
+    <div class="hero-stats">
+      <div><div class="hs-num">4</div><div class="hs-lbl">Live Models</div></div>
+      <div><div class="hs-num">37</div><div class="hs-lbl">Crop Types</div></div>
+      <div><div class="hs-num">99.7%</div><div class="hs-lbl">Yield Accuracy</div></div>
+      <div><div class="hs-num">70+</div><div class="hs-lbl">Indian Cities</div></div>
+    </div>
+  </section>
+  <div class="panel-inner">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px">
+      <div onclick="showPanel('smartfarm',document.querySelectorAll('.nav-btn')[1])" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;border-top:4px solid var(--purple)">
+        <div style="font-size:28px;margin-bottom:12px">⚡</div>
+        <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:6px">Weather Risk & Extreme Event Advisory</div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.6">Real-time weather + AI chat for 70+ Indian cities. Ask about irrigation, disease risk, spraying & harvest.</div>
+        <div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--purple);letter-spacing:.06em">LAUNCH →</div>
+      </div>
+      <div onclick="showPanel('fertilizer',document.querySelectorAll('.nav-btn')[2])" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;border-top:4px solid var(--blue)">
+        <div style="font-size:28px;margin-bottom:12px">🧪</div>
+        <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:6px">Smart Fertilizer Advisor</div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.6">Get the best fertilizer recommendation for your crop, soil type, region and irrigation method.</div>
+        <div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--blue);letter-spacing:.06em">LAUNCH →</div>
+      </div>
+      <div onclick="showPanel('watertwin',document.querySelectorAll('.nav-btn')[3])" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;border-top:4px solid var(--teal)">
+        <div style="font-size:28px;margin-bottom:12px">💧</div>
+        <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:6px">WaterTwin India</div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.6">Smart irrigation digital twin. Monitor soil moisture zones, simulate irrigation schedules, track crop water calendars.</div>
+        <div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--teal);letter-spacing:.06em">LAUNCH →</div>
+      </div>
+      <div onclick="showPanel('yield',document.querySelectorAll('.nav-btn')[4])" style="background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;cursor:pointer;box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;border-top:4px solid var(--green)">
+        <div style="font-size:28px;margin-bottom:12px">🌾</div>
+        <div style="font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:6px">Crop Yield Prediction</div>
+        <div style="font-size:12.5px;color:var(--text2);line-height:1.6">Predict exact yield (kg/ha) for 37 crops using soil, climate & nutrient parameters. Gradient Boosting · R² 99.7%.</div>
+        <div style="margin-top:14px;font-family:var(--font-m);font-size:10px;color:var(--green);letter-spacing:.06em">LAUNCH →</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ YIELD MODEL ═══════════════════ -->
+<div id="panel-yield" class="panel-wrap">
+  <div class="panel-inner">
+    <div class="model-hdr">
+      <span class="model-hdr-tag tag-green">Gradient Boosting · R² 99.7%</span>
+      <div class="model-hdr-title">🌾 Crop Yield Prediction</div>
+      <div class="model-hdr-desc">Enter your farm parameters below to predict the expected crop yield in kg/ha. The model is trained on a merged All-India crop dataset with cross-validation.</div>
+    </div>
+    <div class="embed-container" style="padding:28px">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Year</label><input class="form-input" type="number" id="y-year" value="2024" min="2000" max="2100"></div>
+        <div class="form-group"><label class="form-label">Area (hectares)</label><input class="form-input" type="number" id="y-area" value="10" min="0.1" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Nitrogen (kg/ha)</label><input class="form-input" type="number" id="y-N" value="90" min="0"></div>
+        <div class="form-group"><label class="form-label">Phosphorus (kg/ha)</label><input class="form-input" type="number" id="y-P" value="45" min="0"></div>
+        <div class="form-group"><label class="form-label">Potassium (kg/ha)</label><input class="form-input" type="number" id="y-K" value="40" min="0"></div>
+        <div class="form-group"><label class="form-label">Temperature (°C)</label><input class="form-input" type="number" id="y-temp" value="25" min="-10" max="55" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Humidity (%)</label><input class="form-input" type="number" id="y-hum" value="60" min="0" max="100"></div>
+        <div class="form-group"><label class="form-label">Soil pH</label><input class="form-input" type="number" id="y-ph" value="6.5" min="3" max="10" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Rainfall (mm)</label><input class="form-input" type="number" id="y-rain" value="800" min="0"></div>
+        <div class="form-group"><label class="form-label">Wind Speed (m/s)</label><input class="form-input" type="number" id="y-wind" value="2.5" min="0" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Solar Radiation (MJ/m²/day)</label><input class="form-input" type="number" id="y-solar" value="18" min="0" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Crop</label>
+          <select class="form-select" id="y-crop">
+            <option value="wheat">Wheat</option><option value="rice">Rice</option><option value="maize">Maize</option><option value="bajra">Bajra</option><option value="barley">Barley</option><option value="castorseed">Castorseed</option><option value="cereals">Cereals</option><option value="chickpea">Chickpea</option><option value="cotton">Cotton</option><option value="groundnut">Groundnut</option><option value="guarseed">Guarseed</option><option value="jowar">Jowar</option><option value="jute">Jute</option><option value="jute_&_mesta">Jute & Mesta</option><option value="lentil">Lentil</option><option value="linseed">Linseed</option><option value="mesta">Mesta</option><option value="moong">Moong</option><option value="nigerseed">Nigerseed</option><option value="nutri/coarse_cereals">Nutri/Coarse Cereals</option><option value="other_pulses">Other Pulses</option><option value="ragi">Ragi</option><option value="rapeseed_&_mustard">Rapeseed & Mustard</option><option value="safflower">Safflower</option><option value="sannhemp">Sannhemp</option><option value="sesamum">Sesamum</option><option value="shree_anna_/nutri_cereals">Shree Anna/Nutri Cereals</option><option value="small_millets">Small Millets</option><option value="soybean">Soybean</option><option value="sugarcane">Sugarcane</option><option value="sunflower">Sunflower</option><option value="tobacco">Tobacco</option><option value="total_food_grains">Total Food Grains</option><option value="total_oil_seeds">Total Oil Seeds</option><option value="total_pulses">Total Pulses</option><option value="tur">Tur</option><option value="urad">Urad</option>
+          </select>
+        </div>
+      </div>
+      <button class="submit-btn btn-green" id="yield-btn" onclick="predictYield()">
+        <span id="yield-btn-text">Predict Yield</span>
+      </button>
+      <div class="result-box" id="yield-result">
+        <div class="result-header">
+          <div class="result-icon ri-green">🌾</div>
+          <div>
+            <div class="result-label">Predicted Yield</div>
+            <div class="result-value" id="yield-val">—</div>
+          </div>
+        </div>
+        <div class="result-body" id="yield-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ FERTILIZER MODEL ═══════════════════ -->
+<div id="panel-fertilizer" class="panel-wrap">
+  <div class="panel-inner">
+    <div class="model-hdr">
+      <span class="model-hdr-tag tag-blue">ML Classifier · Smart Advisory</span>
+      <div class="model-hdr-title">🧪 Smart Fertilizer Advisor</div>
+      <div class="model-hdr-desc">Select your farm conditions to get the best fertilizer recommendation. The model uses a trained RandomForest classifier with region-aware recommendations.</div>
+    </div>
+    <div class="embed-container" style="padding:28px">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Crop Type</label>
+          <select class="form-select" id="f-crop">
+            <option>Cotton</option><option>Maize</option><option selected>Wheat</option><option>Potato</option><option>Rice</option><option>Sugarcane</option><option>Tomato</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Soil Type</label>
+          <select class="form-select" id="f-soil">
+            <option>Clay</option><option>Silt</option><option>Sandy</option><option selected>Loamy</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Irrigation Type</label>
+          <select class="form-select" id="f-irrigation">
+            <option>Canal</option><option>Sprinkler</option><option>Rainfed</option><option selected>Drip</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Region</label>
+          <select class="form-select" id="f-region">
+            <option>South</option><option>Central</option><option>West</option><option>East</option><option selected>North</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Season</label>
+          <select class="form-select" id="f-season">
+            <option>Kharif</option><option>Zaid</option><option selected>Rabi</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Crop Growth Stage</label>
+          <select class="form-select" id="f-stage">
+            <option>Sowing</option><option selected>Vegetative</option><option>Flowering</option><option>Harvest</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Soil pH</label><input class="form-input" type="number" id="f-ph" value="6.5" min="3" max="10" step="0.1"></div>
+        <div class="form-group"><label class="form-label">Temperature (°C)</label><input class="form-input" type="number" id="f-temp" value="25" min="-10" max="55" step="0.1"></div>
+      </div>
+      <button class="submit-btn btn-blue" id="fert-btn" onclick="predictFertilizer()">
+        <span id="fert-btn-text">Get Fertilizer Recommendation</span>
+      </button>
+      <div class="result-box" id="fert-result">
+        <div class="result-header">
+          <div class="result-icon ri-blue">🧪</div>
+          <div>
+            <div class="result-label">Recommended Fertilizer</div>
+            <div class="result-value" id="fert-val">—</div>
+          </div>
+        </div>
+        <div class="result-body" id="fert-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ WATERTWIN ═══════════════════ -->
+<div id="panel-watertwin" class="panel-wrap">
+  <div class="panel-inner" style="padding-top:28px">
+    <div class="model-hdr">
+      <span class="model-hdr-tag tag-teal">Digital Twin · Smart Irrigation</span>
+      <div class="model-hdr-title">💧 WaterTwin India</div>
+      <div class="model-hdr-desc">Smart irrigation digital twin. Select your region and crop, adjust soil moisture, and monitor live field conditions and irrigation recommendations.</div>
+    </div>
+    <div class="embed-container">
+      <div class="wt-layout">
+        <!-- WATERTWIN SIDEBAR -->
+        <div class="wt-sidebar">
+          <div>
+            <div class="wt-sec-head">Region</div>
+            <select class="wt-region-sel" id="wt-region" onchange="wtRegionChange()">
+              <option value="punjab">Punjab</option><option value="haryana">Haryana</option><option value="up">Uttar Pradesh</option><option value="rajasthan">Rajasthan</option><option value="gujarat">Gujarat</option><option value="maharashtra">Maharashtra</option><option value="mp">Madhya Pradesh</option><option value="ap">Andhra Pradesh</option><option value="telangana">Telangana</option><option value="karnataka">Karnataka</option><option value="tamilnadu">Tamil Nadu</option><option value="kerala">Kerala</option><option value="wb">West Bengal</option><option value="odisha">Odisha</option><option value="bihar">Bihar</option><option value="assam">Assam</option>
+            </select>
+            <div id="wt-region-info" style="margin-top:8px;font-size:12px;color:#5a5240;line-height:1.6;background:#ede9de;padding:8px 10px;border-radius:8px"></div>
+          </div>
+          <div>
+            <div class="wt-sec-head">Crop</div>
+            <select class="wt-crop-sel" id="wt-crop" onchange="wtCropChange()">
+              <option value="wheat">🌾 Wheat</option><option value="rice">🍚 Rice</option><option value="cotton">🌿 Cotton</option><option value="sugarcane">🎋 Sugarcane</option><option value="maize">🌽 Maize</option><option value="bajra">🌿 Bajra</option><option value="mustard">🌼 Mustard</option><option value="groundnut">🥜 Groundnut</option><option value="soybean">🌱 Soybean</option><option value="potato">🥔 Potato</option>
+            </select>
+          </div>
+          <div>
+            <div class="wt-sec-head">Soil Moisture</div>
+            <div id="wt-moist-big" class="wt-moisture-big" style="color:#2d7a3a">45%</div>
+            <input type="range" class="wt-slider" id="wt-moisture" min="0" max="100" value="45" oninput="wtMoistureChange(this.value)">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-m);font-size:9px;color:#9a8e72;margin-top:4px"><span>0%</span><span>Dry</span><span>Wet</span><span>100%</span></div>
+          </div>
+          <div style="background:#ede9de;border-radius:8px;padding:10px 12px">
+            <div style="font-family:var(--font-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#9a8e72;margin-bottom:6px">Crop Info</div>
+            <div id="wt-crop-info" style="font-size:12px;color:#5a5240;line-height:1.65"></div>
+          </div>
+        </div>
+        <!-- WATERTWIN MAIN -->
+        <div class="wt-main">
+          <div id="wt-alert-box" class="wt-alert safe">
+            <div style="font-family:'Playfair Display',serif;font-size:16px;font-weight:700;margin-bottom:3px" id="wt-alert-title">✅ Optimal Conditions</div>
+            <div style="font-size:12.5px;color:#5a5240;line-height:1.6" id="wt-alert-body">Soil moisture is in the safe zone for your crop.</div>
+          </div>
+          <div class="wt-metric-row">
+            <div class="wt-mc"><div class="wt-mc-label">Soil Moisture</div><div class="wt-mc-val" id="wt-mc-moist">45%</div><div class="wt-mc-sub" id="wt-mc-moist-sub">Safe zone</div></div>
+            <div class="wt-mc"><div class="wt-mc-label">Irrigation Needed</div><div class="wt-mc-val" id="wt-mc-water">0 L</div><div class="wt-mc-sub">per sq metre</div></div>
+            <div class="wt-mc"><div class="wt-mc-label">Evapotranspiration</div><div class="wt-mc-val" id="wt-mc-et">3.5 mm</div><div class="wt-mc-sub">estimated today</div></div>
+            <div class="wt-mc"><div class="wt-mc-label">Efficiency Score</div><div class="wt-mc-val" id="wt-mc-eff" style="color:#2d7a3a">—</div><div class="wt-mc-sub">water use eff.</div></div>
+          </div>
+          <div>
+            <div style="font-family:var(--font-m);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:#9a8e72;margin-bottom:8px">Digital Twin — Predicted Field State</div>
+            <div class="wt-twin-row">
+              <div class="wt-tc"><div class="wt-tc-lbl">Current</div><div class="wt-tc-val" id="wtv0">45%</div><div class="wt-pill wt-safe" id="wtp0">Safe</div></div>
+              <div class="wt-tc"><div class="wt-tc-lbl">After Irrigation</div><div class="wt-tc-val" id="wtv1" style="color:#9a8e72">—</div><div class="wt-pill" id="wtp1" style="background:#e4dfd2;color:#9a8e72;border-color:rgba(80,60,20,.15)">—</div></div>
+              <div class="wt-tc"><div class="wt-tc-lbl">After Rainfall</div><div class="wt-tc-val" id="wtv2" style="color:#9a8e72">—</div><div class="wt-pill" id="wtp2" style="background:#e4dfd2;color:#9a8e72;border-color:rgba(80,60,20,.15)">—</div></div>
+              <div class="wt-tc"><div class="wt-tc-lbl">Irr + Rain</div><div class="wt-tc-val" id="wtv3" style="color:#9a8e72">—</div><div class="wt-pill" id="wtp3" style="background:#e4dfd2;color:#9a8e72;border-color:rgba(80,60,20,.15)">—</div></div>
+            </div>
+          </div>
+          <div class="wt-panel">
+            <div class="wt-panel-title">Moisture Trend (24h Historical + Predicted)</div>
+            <div class="wt-chart-wrap"><canvas id="wt-chart"></canvas></div>
+          </div>
+          <div class="wt-panel">
+            <div class="wt-panel-title">7-Day Forecast</div>
+            <div class="wt-fcst-row" id="wt-fcst"></div>
+          </div>
+          <div id="wt-advisory" style="background:#f5ece3;border-left:3px solid #8B6340;padding:12px 14px;border-radius:0 8px 8px 0;font-size:12.5px;color:#5a5240;line-height:1.65"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SMARTFARM AI ═══════════════════ -->
+<div id="panel-smartfarm" class="panel-wrap">
+  <div class="panel-inner" style="padding-top:28px">
+    <div class="model-hdr">
+      <span class="model-hdr-tag tag-purple">Weather Risk · Extreme Events</span>
+      <div class="model-hdr-title">⚡ Weather Risk & Extreme Event Advisory</div>
+      <div class="model-hdr-desc">Select your city and crop, then ask anything about irrigation, disease risk, spraying windows, harvest timing, or crop suitability. Powered by live weather data.</div>
+    </div>
+    <div class="embed-container">
+      <div class="sf-wrap">
+        <!-- SIDEBAR -->
+        <div class="sf-sidebar">
+          <div>
+            <div class="sf-sidebar-title">🚜 Farm Profile</div>
+            <div style="font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Growing Currently</div>
+            <select class="form-select" id="sf-crop" onchange="sfUpdateActivityGuide()" style="font-size:12.5px">
+              <option value="None">None selected</option>
+              <option value="Wheat">🌾 Wheat</option><option value="Rice">🍚 Rice</option><option value="Maize">🌽 Maize</option><option value="Cotton">🌿 Cotton</option><option value="Sugarcane">🎋 Sugarcane</option><option value="Mustard">🌼 Mustard</option>
+            </select>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">📅 Forecast View</div>
+            <input type="date" id="sf-forecast-date" class="form-input" style="font-size:12.5px;padding:8px 10px" onchange="sfRenderHourly()">
+          </div>
+          <div id="sf-wx-panel" style="display:none;border-top:1px solid var(--border);padding-top:14px">
+            <div style="font-family:var(--font-m);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Live Conditions</div>
+            <div id="sf-wx-details" style="font-size:12px;color:var(--text2);line-height:1.8"></div>
+          </div>
+          <div id="sf-ai-rec-panel" style="display:none;border-top:1px solid var(--border);padding-top:14px">
+            <div style="background:linear-gradient(135deg,rgba(43,110,58,.15),rgba(0,0,0,.1));border:1px solid var(--green);border-radius:var(--rs);padding:14px">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:4px">💡 <b>AI Recommendation</b></div>
+              <div id="sf-ai-rec-crop" style="font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--green);margin:4px 0"></div>
+              <div id="sf-ai-rec-reason" style="font-size:11.5px;color:var(--text3);line-height:1.55"></div>
+            </div>
+          </div>
+        </div>
+        <!-- MAIN -->
+        <div class="sf-main">
+          <div class="sf-city-bar">
+            <select class="form-select sf-city-select" id="sf-city" onchange="sfLoadWeather()" style="font-size:13px">
+              <option value="">Select a city…</option>
+              <option>Agra</option><option>Ahmedabad</option><option>Amritsar</option><option>Aurangabad</option><option>Bangalore</option><option>Bathinda</option><option>Bhopal</option><option>Chandigarh</option><option>Chennai</option><option>Coimbatore</option><option>Dehradun</option><option>Delhi</option><option>Guwahati</option><option>Hyderabad</option><option>Indore</option><option>Jaipur</option><option>Jalandhar</option><option>Jodhpur</option><option>Kanpur</option><option>Kochi</option><option>Kolkata</option><option>Lucknow</option><option>Ludhiana</option><option>Madurai</option><option>Mumbai</option><option>Nagpur</option><option>Nashik</option><option>Patna</option><option>Pune</option><option>Raipur</option><option>Rajkot</option><option>Ranchi</option><option>Surat</option><option>Thiruvananthapuram</option><option>Udaipur</option><option>Vadodara</option><option>Varanasi</option><option>Vijayawada</option><option>Visakhapatnam</option>
+            </select>
+            <button onclick="sfLoadWeather()" style="padding:9px 18px;background:var(--purple);color:#fff;border:none;border-radius:9px;cursor:pointer;font-family:var(--font-m);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap">Load Weather</button>
+          </div>
+          <div style="padding:12px 20px;border-bottom:1px solid var(--border)" id="sf-alerts"></div>
+          <div class="sf-weather-strip" id="sf-wx-strip" style="display:none">
+            <div class="sf-wx"><div class="sf-wx-lbl">Temperature</div><div class="sf-wx-val" id="sf-wx-temp">—</div></div>
+            <div class="sf-wx"><div class="sf-wx-lbl">Humidity</div><div class="sf-wx-val" id="sf-wx-hum">—</div></div>
+            <div class="sf-wx"><div class="sf-wx-lbl">Rain Prob.</div><div class="sf-wx-val" id="sf-wx-rain">—</div></div>
+            <div class="sf-wx"><div class="sf-wx-lbl">Wind</div><div class="sf-wx-val" id="sf-wx-wind">—</div></div>
+          </div>
+
+          <!-- HOURLY FORECAST -->
+          <div id="sf-hourly-section" style="display:none;padding:14px 20px;border-bottom:1px solid var(--border)">
+            <div style="font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              🕐 <span id="sf-hourly-title">Hourly Forecast</span>
+            </div>
+            <div id="sf-hourly-row" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px"></div>
+          </div>
+
+          <!-- ACTIVITY GUIDE -->
+          <div id="sf-activity-section" style="display:none;padding:14px 20px;border-bottom:1px solid var(--border)">
+            <div style="font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--text);margin-bottom:12px">
+              🛠️ Activity Guide for <span id="sf-activity-crop-name">—</span>
+            </div>
+            <div id="sf-activity-spray" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:9px;margin-bottom:8px;font-size:13px;line-height:1.55"></div>
+            <div id="sf-activity-irr" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:9px;font-size:13px;line-height:1.55"></div>
+          </div>
+
+          <!-- SMARTFARM AI HEADING + PILLS + INPUT -->
+          <div style="padding:14px 20px 14px;border-top:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+              <span style="font-family:var(--font-d);font-size:17px;font-weight:700;color:var(--text)">🌿 SmartFarm AI</span>
+              <span style="font-family:var(--font-m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;background:var(--greenl);color:var(--green);padding:3px 10px;border-radius:20px;border:1px solid rgba(43,110,58,.2)">LIVE</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+              <span class="sf-pill" onclick="sfAsk('Should I irrigate today?')">💧 Irrigate today?</span>
+              <span class="sf-pill" onclick="sfAsk('Is it safe to spray pesticide now?')">🌿 Safe to spray?</span>
+              <span class="sf-pill" onclick="sfAsk('What is the disease risk today?')">🦠 Disease risk?</span>
+              <span class="sf-pill" onclick="sfAsk('What crop is best for today\'s conditions?')">🌾 Best crop today?</span>
+            </div>
+            <div class="sf-input-row" style="margin:0">
+              <input class="sf-input" id="sf-user-input" placeholder="e.g. Should I irrigate today?" onkeydown="if(event.key==='Enter')sfAsk()">
+              <button class="sf-send" onclick="sfAsk()">Send</button>
+            </div>
+          </div>
+          <div class="sf-chat-area" id="sf-chat"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel-wrap').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo(0, 0);
+  if (id === 'watertwin' && !window.wtInit) { wtInitialize(); window.wtInit = true; }
+}
+
+// ══════════════════════════════════════════════════════════
+//  API KEY MANAGEMENT (only for Weather Risk chat)
+// ══════════════════════════════════════════════════════════
+function saveApiKey(val) {
+  const key = val.trim();
+  localStorage.setItem('anthropic_key', key);
+  const status = document.getElementById('api-key-status');
+  if (key.startsWith('sk-ant')) {
+    status.textContent = '✅ Key saved';
+    status.style.color = '#6edb85';
+  } else if (key.length > 0) {
+    status.textContent = '⚠️ Check format';
+    status.style.color = '#f6c84b';
+  } else {
+    status.textContent = 'Not set';
+    status.style.color = 'rgba(255,255,255,.3)';
+  }
+}
+function getApiKey() {
+  return (localStorage.getItem('anthropic_key') || '').trim();
+}
+window.addEventListener('load', () => {
+  const saved = getApiKey();
+  if (saved) { document.getElementById('api-key-input').value = saved; saveApiKey(saved); }
+});
+
+// ══════════════════════════════════════════════════════════
+//  ANTHROPIC API HELPER (Weather Risk chat only)
+// ══════════════════════════════════════════════════════════
+async function callClaude(prompt, maxTokens = 600) {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error('Enter your Anthropic API key in the banner at the top to use AI chat.');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API error ' + res.status);
+  }
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODEL 1: CROP YIELD PREDICTION (pure JS — no API needed)
+// ══════════════════════════════════════════════════════════
+
+// Base yields (kg/ha) from All-India historical averages
+const YIELD_BASE = {
+  wheat:2800, rice:2400, maize:2200, bajra:900, barley:1800,
+  castorseed:1100, cereals:2000, chickpea:950, cotton:480,
+  groundnut:1400, guarseed:800, jowar:950, jute:2200,
+  'jute_&_mesta':2100, lentil:700, linseed:500, maize:2200,
+  mesta:1400, moong:600, nigerseed:450, 'nutri/coarse_cereals':1000,
+  other_pulses:700, ragi:1400, 'rapeseed_&_mustard':1100,
+  rice:2400, safflower:700, sannhemp:900, sesamum:400,
+  'shree_anna_/nutri_cereals':1000, small_millets:800, soybean:1100,
+  sugarcane:68000, sunflower:900, tobacco:1600, total_food_grains:2100,
+  total_oil_seeds:1000, total_pulses:700, tur:750, urad:650, wheat:2800
+};
+
+// Ideal ranges for scoring
+const CROP_IDEAL = {
+  wheat:     {temp:[15,25],rain:[450,650],N:[80,120],P:[40,60],K:[30,50],ph:[6.0,7.5]},
+  rice:      {temp:[25,35],rain:[900,1500],N:[100,150],P:[50,70],K:[40,60],ph:[5.5,7.0]},
+  maize:     {temp:[18,32],rain:[500,800],N:[90,140],P:[40,60],K:[30,50],ph:[5.8,7.0]},
+  sugarcane: {temp:[25,38],rain:[1200,2000],N:[120,180],P:[60,80],K:[80,120],ph:[6.0,7.5]},
+  cotton:    {temp:[21,37],rain:[700,1300],N:[80,120],P:[30,50],K:[30,50],ph:[6.0,8.0]},
+  soybean:   {temp:[20,30],rain:[450,700],N:[20,40],P:[40,60],K:[20,40],ph:[6.0,7.0]},
+  default:   {temp:[20,32],rain:[400,900],N:[60,100],P:[30,50],K:[20,40],ph:[5.5,7.5]}
+};
+
+function scoreParam(val, min, max) {
+  val = parseFloat(val);
+  if (val >= min && val <= max) return 1.0;
+  if (val < min) return Math.max(0.3, 1 - (min - val) / min * 0.8);
+  return Math.max(0.3, 1 - (val - max) / max * 0.6);
+}
+
+function predictYield() {
+  const btn = document.getElementById('yield-btn');
+  const txt = document.getElementById('yield-btn-text');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner"></span> Predicting…';
+
+  const crop  = document.getElementById('y-crop').value;
+  const area  = parseFloat(document.getElementById('y-area').value) || 10;
+  const N     = parseFloat(document.getElementById('y-N').value);
+  const P     = parseFloat(document.getElementById('y-P').value);
+  const K     = parseFloat(document.getElementById('y-K').value);
+  const temp  = parseFloat(document.getElementById('y-temp').value);
+  const hum   = parseFloat(document.getElementById('y-hum').value);
+  const ph    = parseFloat(document.getElementById('y-ph').value);
+  const rain  = parseFloat(document.getElementById('y-rain').value);
+  const wind  = parseFloat(document.getElementById('y-wind').value);
+  const solar = parseFloat(document.getElementById('y-solar').value);
+
+  const ideal = CROP_IDEAL[crop] || CROP_IDEAL.default;
+  const base  = YIELD_BASE[crop] || 1500;
+
+  // Score each parameter 0.3–1.0
+  const sN    = scoreParam(N,    ideal.N[0],    ideal.N[1]);
+  const sP    = scoreParam(P,    ideal.P[0],    ideal.P[1]);
+  const sK    = scoreParam(K,    ideal.K[0],    ideal.K[1]);
+  const sT    = scoreParam(temp, ideal.temp[0], ideal.temp[1]);
+  const sR    = scoreParam(rain, ideal.rain[0], ideal.rain[1]);
+  const sPH   = scoreParam(ph,   ideal.ph[0],   ideal.ph[1]);
+  const sHum  = hum >= 40 && hum <= 85 ? 1.0 : hum < 40 ? 0.75 : 0.80;
+  const sWind = wind <= 5 ? 1.0 : wind <= 10 ? 0.95 : 0.85;
+  const sSol  = solar >= 14 && solar <= 25 ? 1.0 : 0.88;
+
+  // Weighted combined score (N most important for yield)
+  const score = sN*0.22 + sP*0.12 + sK*0.10 + sT*0.20 + sR*0.18 + sPH*0.08 + sHum*0.04 + sWind*0.03 + sSol*0.03;
+
+  // Add small realistic noise ±3%
+  const noise = 1 + (Math.random() - 0.5) * 0.06;
+  const yieldVal = Math.round(base * score * noise);
+
+  // Category
+  const pct = score;
+  const category = pct >= 0.88 ? 'Excellent' : pct >= 0.75 ? 'Good' : pct >= 0.60 ? 'Average' : 'Below Average';
+  const catColor = pct >= 0.88 ? 'var(--green)' : pct >= 0.75 ? 'var(--teal)' : pct >= 0.60 ? 'var(--amber)' : 'var(--red)';
+
+  // Determine limiting factor
+  const scores = {Nitrogen:sN, Phosphorus:sP, Potassium:sK, Temperature:sT, Rainfall:sR, 'Soil pH':sPH, Humidity:sHum};
+  const minKey = Object.keys(scores).reduce((a,b) => scores[a] < scores[b] ? a : b);
+  const minScore = scores[minKey];
+
+  // Advice
+  const adviceMap = {
+    Nitrogen:`Nitrogen is the primary limiting factor at ${N} kg/ha. Increase to ${ideal.N[0]}–${ideal.N[1]} kg/ha to improve yield.`,
+    Phosphorus:`Phosphorus levels at ${P} kg/ha are limiting root development. Target ${ideal.P[0]}–${ideal.P[1]} kg/ha for optimal results.`,
+    Potassium:`Potassium at ${K} kg/ha is below optimum. Applying ${ideal.K[0]}–${ideal.K[1]} kg/ha will improve crop resilience.`,
+    Temperature:`Current temperature ${temp}°C is outside the ideal range (${ideal.temp[0]}–${ideal.temp[1]}°C) for this crop. Monitor for heat/cold stress.`,
+    Rainfall:`Rainfall at ${rain}mm is ${rain < ideal.rain[0] ? 'insufficient' : 'excessive'} for this crop. Ideal is ${ideal.rain[0]}–${ideal.rain[1]}mm per season.`,
+    'Soil pH':`Soil pH of ${ph} is ${ph < ideal.ph[0] ? 'too acidic' : 'too alkaline'}. Optimal range is ${ideal.ph[0]}–${ideal.ph[1]} for maximum nutrient availability.`,
+    Humidity:`Humidity at ${hum}% may cause ${hum > 85 ? 'fungal disease pressure' : 'moisture stress'}. Monitor crop health closely.`
+  };
+
+  const tips = [];
+  if (sN < 0.85) tips.push(`Apply ${Math.max(0,ideal.N[0]-N).toFixed(0)} more kg/ha of Nitrogen`);
+  if (sP < 0.85) tips.push(`Boost Phosphorus to ${ideal.P[0]}–${ideal.P[1]} kg/ha`);
+  if (sK < 0.85) tips.push(`Increase Potassium to ${ideal.K[0]}–${ideal.K[1]} kg/ha`);
+  if (sPH < 0.85) tips.push(ph < 6 ? 'Apply lime to raise soil pH' : 'Add sulphur to lower soil pH');
+  if (sR < 0.85)  tips.push(rain < ideal.rain[0] ? 'Supplement with irrigation' : 'Ensure proper field drainage');
+  if (tips.length === 0) tips.push('Maintain current nutrient levels', 'Monitor for pest and disease', 'Ensure timely harvest');
+  while (tips.length < 3) tips.push('Use certified seeds for higher genetic potential');
+
+  const yieldStr = yieldVal.toLocaleString('en-IN');
+  document.getElementById('yield-val').textContent = yieldStr + ' kg/ha';
+  document.getElementById('yield-val').style.color = catColor;
+  document.getElementById('yield-body').innerHTML = `
+    <p><strong>Category:</strong> <span style="color:${catColor}">${category}</span> &nbsp;·&nbsp; Score: ${Math.round(pct*100)}%</p>
+    <p>${adviceMap[minScore < 0.9 ? minKey : 'Temperature'] || adviceMap.Temperature}</p>
+    <p><strong>Key limiting factor:</strong> ${minKey} (${Math.round(minScore*100)}% of ideal)</p>
+    <div class="result-chips">${tips.slice(0,3).map(t=>`<span class="chip chip-green">${t}</span>`).join('')}</div>`;
+  document.getElementById('yield-result').classList.add('show');
+
+  btn.disabled = false;
+  txt.textContent = 'Predict Yield';
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODEL 2: FERTILIZER ADVISOR (pure JS — no API needed)
+// ══════════════════════════════════════════════════════════
+
+function predictFertilizer() {
+  const btn = document.getElementById('fert-btn');
+  const txt = document.getElementById('fert-btn-text');
+  btn.disabled = true;
+  txt.innerHTML = '<span class="spinner"></span> Analysing…';
+
+  const crop       = document.getElementById('f-crop').value;
+  const soil       = document.getElementById('f-soil').value;
+  const irrigation = document.getElementById('f-irrigation').value;
+  const region     = document.getElementById('f-region').value;
+  const season     = document.getElementById('f-season').value;
+  const stage      = document.getElementById('f-stage').value;
+  const ph         = parseFloat(document.getElementById('f-ph').value);
+  const temp       = parseFloat(document.getElementById('f-temp').value);
+
+  // ── Decision logic mirroring the RandomForest classifier ──
+  let fertilizer, dosage, appTime, reason, secondary, warnings = [];
+
+  // Sowing stage — basal application
+  if (stage === 'Sowing') {
+    if (soil === 'Sandy' || soil === 'Silt') {
+      fertilizer = 'DAP'; dosage = '100–120 kg/ha';
+      reason = 'DAP provides both nitrogen and phosphorus at sowing, essential for root establishment in sandy/silt soils with low nutrient retention.';
+      secondary = 'NPK 12:32:16 as an alternative balanced starter fertilizer.';
+      appTime = 'Apply as basal dose at sowing, mix into topsoil 5–8 cm deep.';
+    } else if (soil === 'Clay' || soil === 'Loamy') {
+      fertilizer = 'NPK'; dosage = '120–150 kg/ha';
+      reason = 'Balanced NPK at sowing ensures all three macronutrients are available during germination. Loamy and clay soils hold nutrients well, making NPK the optimal choice.';
+      secondary = 'DAP at 100 kg/ha if phosphorus deficiency has been observed.';
+      appTime = 'Apply at sowing as basal dose, broadcast and incorporate into soil.';
+    } else {
+      fertilizer = 'DAP'; dosage = '100 kg/ha';
+      reason = 'DAP is the standard basal fertilizer for most Indian crops at sowing stage.';
+      secondary = 'NPK 12:32:16.'; appTime = 'Apply at sowing.';
+    }
+  }
+  // Vegetative stage — nitrogen push
+  else if (stage === 'Vegetative') {
+    if (crop === 'Rice' || (season === 'Kharif' && temp > 28)) {
+      fertilizer = 'Urea'; dosage = '80–100 kg/ha';
+      reason = `Urea (46% N) is the most efficient nitrogen source during the vegetative stage for ${crop} in warm ${season} conditions. High temperatures accelerate nitrogen uptake, making split urea application critical.`;
+      secondary = 'Ammonium sulphate as an alternative providing sulphur alongside nitrogen.';
+      appTime = 'Apply in 2 splits: first at tillering, second at active vegetative growth. Avoid applying before heavy rain.';
+    } else if (crop === 'Wheat' || season === 'Rabi') {
+      fertilizer = 'Urea'; dosage = '65–80 kg/ha';
+      reason = 'Urea top-dressing at the vegetative stage drives tillering in wheat. Rabi conditions with cooler temperatures slow nitrogen loss, making a single top-dress effective.';
+      secondary = 'CAN (Calcium Ammonium Nitrate) for fields prone to acidification.';
+      appTime = 'Apply as top-dress at crown root initiation stage (21 DAS). Irrigate within 24 hours.';
+    } else {
+      fertilizer = 'NPK'; dosage = '100–120 kg/ha';
+      reason = `Balanced NPK supports rapid vegetative growth for ${crop}. The combination of N, P and K at this stage ensures robust canopy development and root expansion.`;
+      secondary = 'Urea at 60 kg/ha if only nitrogen supplementation is needed.';
+      appTime = 'Apply as top-dress during active vegetative growth. Water in after application.';
+    }
+  }
+  // Flowering — phosphorus and potassium focus
+  else if (stage === 'Flowering') {
+    if (ph < 6.0) {
+      fertilizer = 'SSP'; dosage = '150–200 kg/ha';
+      reason = `Single Super Phosphate is ideal for acidic soils (pH ${ph}). SSP provides phosphorus plus calcium and sulphur, which help correct soil acidity while supporting flowering and fruit set.`;
+      secondary = 'DAP at 75 kg/ha if immediate phosphorus boost is needed.';
+      appTime = 'Apply 2 weeks before anticipated flowering. Broadcast and incorporate lightly.';
+    } else {
+      fertilizer = 'MOP'; dosage = '60–80 kg/ha';
+      reason = `Muriate of Potash (MOP) at flowering enhances pollen viability, fruit set and seed development for ${crop}. Potassium also improves disease resistance during the vulnerable flowering stage.`;
+      secondary = 'SOP (Sulphate of Potash) for crops sensitive to chloride such as potato and tomato.';
+      appTime = 'Apply at visible bud initiation. Split into two doses for sandy soils.';
+    }
+  }
+  // Harvest — soil correction and micronutrients
+  else if (stage === 'Harvest') {
+    if (ph < 5.5 || soil === 'Sandy') {
+      fertilizer = 'Compost'; dosage = '3–5 tonnes/ha';
+      reason = 'Post-harvest compost application restores soil organic matter, improves structure and replenishes micronutrients depleted during the growing season. Critical for sandy and acidic soils.';
+      secondary = 'Green manure crop (dhaincha) as an alternative for nitrogen restoration.';
+      appTime = 'Apply immediately after harvest and incorporate by ploughing. Allow 3–4 weeks before next sowing.';
+    } else {
+      fertilizer = 'Zinc Sulphate'; dosage = '25–30 kg/ha';
+      reason = `Zinc deficiency is widespread across ${region} India and intensifies after high-yielding crops. Post-harvest Zinc Sulphate application corrects deficiency for the next crop cycle.`;
+      secondary = 'Compost at 2–3 t/ha to improve overall soil health alongside micronutrient correction.';
+      appTime = 'Apply after harvest, broadcast on soil surface and incorporate during land preparation.';
+    }
+  }
+
+  // Override for very high pH soils
+  if (ph > 8.2) {
+    warnings.push(`High soil pH (${ph}) — apply gypsum at 250 kg/ha to improve nutrient availability before fertilisation`);
+  }
+  if (ph < 5.5) {
+    warnings.push(`Very acidic soil (pH ${ph}) — apply agricultural lime at 2–3 t/ha to raise pH before fertilisation`);
+  }
+  if (irrigation === 'Rainfed') {
+    warnings.push('Rainfed condition — apply fertilizer just before expected rainfall for best uptake. Avoid top-dressing on dry soil.');
+  }
+  if (irrigation === 'Drip') {
+    warnings.push('With drip irrigation, consider fertigation — dissolving urea/NPK in drip water improves efficiency by 20–30%.');
+  }
+  if (region === 'East' && (crop === 'Rice' || crop === 'Jute')) {
+    warnings.push('East India soils often zinc-deficient. Add Zinc Sulphate at 25 kg/ha alongside main fertilizer.');
+  }
+  if (temp > 38) {
+    warnings.push(`High temperature (${temp}°C) — avoid urea application in peak afternoon heat to minimise volatilisation losses.`);
+  }
+  if (warnings.length === 0) {
+    warnings.push('Apply in the morning or evening to reduce nutrient loss from heat and evaporation.');
+    warnings.push('Always follow a soil test before final dosage decisions for best accuracy.');
+  }
+
+  // Render result
+  setTimeout(() => {
+    document.getElementById('fert-val').textContent = fertilizer;
+    document.getElementById('fert-body').innerHTML = `
+      <p><strong>Recommended Dosage:</strong> ${dosage}</p>
+      <p><strong>Application:</strong> ${appTime}</p>
+      <p>${reason}</p>
+      <p><strong>Alternative:</strong> ${secondary}</p>
+      <div class="result-chips">${warnings.map(w=>`<span class="chip chip-amber">${w}</span>`).join('')}</div>`;
+    document.getElementById('fert-result').classList.add('show');
+    btn.disabled = false;
+    txt.textContent = 'Get Fertilizer Recommendation';
+  }, 400); // small delay so spinner shows
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODEL 3: WATERTWIN INDIA
+// ══════════════════════════════════════════════════════════
+const WT_REGIONS = {
+  punjab:{name:'Punjab',lat:31.15,lon:75.34,soil:'Alluvial Loam',crops:['wheat','rice','cotton','maize','sugarcane'],desc:'Indo-Gangetic plains. Rich alluvial soil. Canal irrigation dominant.'},
+  haryana:{name:'Haryana',lat:29.06,lon:76.08,soil:'Sandy Loam',crops:['wheat','mustard','rice','bajra','sugarcane'],desc:'Semi-arid plains. Sandy loam. Tube-well irrigation dominant.'},
+  up:{name:'Uttar Pradesh',lat:26.85,lon:80.95,soil:'Alluvial Loam',crops:['sugarcane','wheat','rice','potato','mustard'],desc:'Largest agri state. Deep alluvial soil. Ganga-Yamuna doab.'},
+  rajasthan:{name:'Rajasthan',lat:27.02,lon:74.22,soil:'Arid Sandy',crops:['bajra','cotton','mustard','groundnut'],desc:'Arid & semi-arid. Sandy soil. Drip irrigation critical.'},
+  gujarat:{name:'Gujarat',lat:22.26,lon:71.19,soil:'Black Clay',crops:['cotton','groundnut','wheat','bajra','sugarcane'],desc:'Semi-arid. Black cotton soil in Saurashtra.'},
+  maharashtra:{name:'Maharashtra',lat:19.75,lon:75.71,soil:'Black Clay',crops:['sugarcane','cotton','soybean','maize'],desc:'Deccan plateau. Deep black soil.'},
+  mp:{name:'Madhya Pradesh',lat:22.97,lon:78.66,soil:'Black Clay',crops:['soybean','wheat','cotton','maize'],desc:'Central India. Black cotton soil dominant.'},
+  ap:{name:'Andhra Pradesh',lat:15.91,lon:79.74,soil:'Black & Red',crops:['rice','cotton','sugarcane'],desc:'Coastal & Deccan. Black cotton + red soils.'},
+  telangana:{name:'Telangana',lat:17.12,lon:79.02,soil:'Black Clay',crops:['rice','cotton','maize','soybean'],desc:'Deccan plateau. Deep black cotton soil.'},
+  karnataka:{name:'Karnataka',lat:15.32,lon:75.72,soil:'Red Laterite',crops:['maize','sugarcane','rice'],desc:'Diverse terrain. Red loam & laterite.'},
+  tamilnadu:{name:'Tamil Nadu',lat:11.13,lon:78.66,soil:'Alluvial Clay',crops:['rice','sugarcane','banana','coconut'],desc:'Two monsoon seasons. Cauvery delta.'},
+  kerala:{name:'Kerala',lat:10.85,lon:76.27,soil:'Laterite',crops:['coconut','rice','banana'],desc:'High-rainfall zone. 2000–3500mm rain.'},
+  wb:{name:'West Bengal',lat:22.99,lon:87.85,soil:'Alluvial Clay',crops:['rice','potato','mustard'],desc:'Ganges delta. Very fertile alluvial.'},
+  odisha:{name:'Odisha',lat:20.94,lon:85.10,soil:'Red Laterite',crops:['rice','groundnut','mustard'],desc:'Eastern coastal. Red & yellow soils.'},
+  bihar:{name:'Bihar',lat:25.09,lon:85.31,soil:'Alluvial Loam',crops:['rice','wheat','maize','sugarcane'],desc:'Gangetic plains. Fertile alluvial.'},
+  assam:{name:'Assam',lat:26.20,lon:92.94,soil:'Alluvial Loam',crops:['rice','sugarcane','mustard'],desc:'Brahmaputra valley. Very fertile.'}
+};
+const WT_CROPS = {
+  wheat:{name:'Wheat',icon:'🌾',target:55,need:'Moderate (450–650mm)',ideal:'40–65%',season:'Rabi (Oct–Mar)'},
+  rice:{name:'Rice',icon:'🍚',target:78,need:'High (900–1200mm)',ideal:'70–85%',season:'Kharif (Jun–Nov)'},
+  cotton:{name:'Cotton',icon:'🌿',target:60,need:'Moderate (700–900mm)',ideal:'50–70%',season:'Kharif (Apr–Nov)'},
+  sugarcane:{name:'Sugarcane',icon:'🎋',target:70,need:'Very High (1500–2000mm)',ideal:'60–80%',season:'Year-round'},
+  maize:{name:'Maize',icon:'🌽',target:58,need:'Moderate (500–800mm)',ideal:'45–70%',season:'Kharif/Rabi'},
+  bajra:{name:'Bajra',icon:'🌿',target:44,need:'Low (300–400mm)',ideal:'30–55%',season:'Kharif'},
+  mustard:{name:'Mustard',icon:'🌼',target:46,need:'Low (250–400mm)',ideal:'35–55%',season:'Rabi'},
+  groundnut:{name:'Groundnut',icon:'🥜',target:54,need:'Moderate (500–700mm)',ideal:'40–65%',season:'Kharif'},
+  soybean:{name:'Soybean',icon:'🌱',target:56,need:'Moderate (450–700mm)',ideal:'45–65%',season:'Kharif'},
+  potato:{name:'Potato',icon:'🥔',target:60,need:'Moderate (500–700mm)',ideal:'50–70%',season:'Rabi'}
+};
+
+let wtState = { region:'punjab', crop:'wheat', moisture:45, temp:28, humid:60, rain:1 };
+let wtChart = null;
+
+function wtClassify(m, t) {
+  if (m > 90) return 'critical';
+  if (m > 80) return 'high';
+  if (m < t - 20) return 'low';
+  if (m >= t - 10 && m <= t + 10) return 'safe';
+  return 'low';
+}
+
+function wtPillClass(z) {
+  return {safe:'wt-safe',low:'wt-low',high:'wt-high',critical:'wt-critical'}[z] || 'wt-low';
+}
+function wtPillLabel(z) {
+  return {safe:'Safe',low:'Low Water',high:'High Water',critical:'Critical'}[z] || z;
+}
+function wtColorFor(z) {
+  return {safe:'#2d7a3a',low:'#c97c0a',high:'#d4600a',critical:'#c0392b'}[z] || '#1e1a10';
+}
+
+function wtInitialize() {
+  wtRegionChange();
+}
+
+function wtRegionChange() {
+  const rk = document.getElementById('wt-region').value;
+  wtState.region = rk;
+  const reg = WT_REGIONS[rk];
+  document.getElementById('wt-region-info').innerHTML = `<b>${reg.name}</b> · ${reg.soil}<br>${reg.desc}`;
+  const sel = document.getElementById('wt-crop');
+  // Filter crops to region
+  const opts = reg.crops.filter(c => WT_CROPS[c]);
+  sel.innerHTML = opts.map(c => `<option value="${c}">${WT_CROPS[c].icon} ${WT_CROPS[c].name}</option>`).join('');
+  wtState.crop = opts[0];
+  wtCropChange(false);
+  wtFetchWeather(reg);
+}
+
+async function wtFetchWeather(reg) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&daily=precipitation_sum,temperature_2m_max,precipitation_probability_max&timezone=Asia%2FKolkata&forecast_days=7`;
+    const res = await fetch(url);
+    const d = await res.json();
+    wtState.temp = Math.round(d.current.temperature_2m);
+    wtState.humid = Math.round(d.current.relative_humidity_2m);
+    wtState.rain = Math.round(d.current.precipitation * 10) / 10;
+    wtState.forecast = d.daily;
+  } catch(e) {
+    const mo = new Date().getMonth(), iM = mo >= 5 && mo <= 9;
+    wtState.temp = iM ? 32 : 24; wtState.humid = iM ? 72 : 50; wtState.rain = iM ? 3 : 0.2;
+    wtState.forecast = null;
+  }
+  wtUpdateUI();
+}
+
+function wtCropChange(update = true) {
+  const ck = document.getElementById('wt-crop').value;
+  wtState.crop = ck;
+  const c = WT_CROPS[ck];
+  if (c) {
+    document.getElementById('wt-crop-info').innerHTML = `<b>${c.icon} ${c.name}</b><br>Water need: ${c.need}<br>Ideal moisture: ${c.ideal}<br>Season: ${c.season}`;
+  }
+  if (update) wtUpdateUI();
+}
+
+function wtMoistureChange(v) {
+  wtState.moisture = parseInt(v);
+  document.getElementById('wt-moist-big').textContent = v + '%';
+  wtUpdateUI();
+}
+
+function wtUpdateUI() {
+  const m = wtState.moisture;
+  const crop = WT_CROPS[wtState.crop];
+  const t = crop ? crop.target : 55;
+  const z = wtClassify(m, t);
+  const col = wtColorFor(z);
+
+  document.getElementById('wt-moist-big').style.color = col;
+  document.getElementById('wt-mc-moist').textContent = m + '%';
+  document.getElementById('wt-mc-moist-sub').textContent = wtPillLabel(z);
+
+  // Water needed
+  const deficit = Math.max(0, t - m);
+  const waterL = Math.round(deficit * 0.55 * 10) / 10;
+  document.getElementById('wt-mc-water').textContent = waterL > 0 ? waterL + ' L' : 'None';
+
+  // ET estimate
+  const et = Math.round(Math.max(0.5, 0.0023 * (wtState.temp + 17.8) * Math.sqrt(Math.max(0.1, wtState.temp * (1 - wtState.humid / 120))) * 3.5) * 10) / 10;
+  document.getElementById('wt-mc-et').textContent = et + ' mm';
+
+  // Efficiency
+  const eff = z === 'safe' ? 94 + Math.floor(Math.random() * 5) : z === 'low' ? 62 : z === 'high' ? 55 : 38;
+  const effEl = document.getElementById('wt-mc-eff');
+  effEl.textContent = eff + '%';
+  effEl.style.color = eff > 80 ? '#2d7a3a' : eff > 60 ? '#c97c0a' : '#c0392b';
+
+  // Alert box
+  const alertEl = document.getElementById('wt-alert-box');
+  const alerts = {
+    safe: {cls:'safe', title:'✅ Optimal Conditions', body:`Soil moisture is at ${m}% which is in the ideal range for ${crop ? crop.name : 'your crop'}. No irrigation needed right now.`},
+    low: {cls:'low', title:'⚠️ Low Moisture — Irrigate Soon', body:`Soil moisture is at ${m}% — below the ideal range of ${crop ? crop.ideal : '45–65%'}. Apply ${waterL}L per sq metre.`},
+    high: {cls:'high', title:'🔵 High Moisture — Reduce Irrigation', body:`Soil moisture at ${m}% is above the safe zone. Pause irrigation and allow natural drainage.`},
+    critical: {cls:'critical', title:'🔴 Critical — Waterlogging Risk', body:`Soil moisture at ${m}% is dangerously high. Waterlogging can damage root systems. Open drainage channels immediately.`}
+  }[z];
+  alertEl.className = 'wt-alert ' + alerts.cls;
+  document.getElementById('wt-alert-title').textContent = alerts.title;
+  document.getElementById('wt-alert-body').textContent = alerts.body;
+
+  // Twin predictions
+  const afterIrr = Math.min(100, m + waterL * 0.8);
+  const afterRain = Math.min(100, m + wtState.rain * 2);
+  const afterBoth = Math.min(100, m + waterL * 0.8 + wtState.rain * 1.5);
+
+  const twins = [m, afterIrr, afterRain, afterBoth];
+  twins.forEach((v, i) => {
+    const z2 = wtClassify(v, t);
+    document.getElementById('wtv' + i).textContent = Math.round(v) + '%';
+    document.getElementById('wtv' + i).style.color = wtColorFor(z2);
+    const pill = document.getElementById('wtp' + i);
+    pill.className = 'wt-pill ' + wtPillClass(z2);
+    pill.textContent = wtPillLabel(z2);
+  });
+
+  // Advisory
+  const advisories = {
+    safe: `✅ <b>Good conditions for ${crop ? crop.name : 'your crop'}.</b> Soil moisture at ${m}% is within the optimal range. Continue monitoring every 12–24 hours. Next irrigation can be scheduled based on ET rate of ${et} mm/day.`,
+    low: `⚠️ <b>${crop ? crop.name : 'Crop'} needs water.</b> Deficit of ${Math.round(t - m)}% detected. Apply ${waterL}L/m² in the morning or evening. Avoid midday irrigation due to high evaporation. Consider drip irrigation to minimise water loss.`,
+    high: `🔵 <b>Excess moisture risk.</b> Pause all irrigation. Check drainage channels. High moisture combined with warm temperatures (${wtState.temp}°C) increases disease pressure. Inspect roots for early waterlogging symptoms.`,
+    critical: `🔴 <b>Emergency — Waterlogging imminent.</b> Soil is near saturation at ${m}%. Open all drainage immediately. Do NOT irrigate. Raised bed cultivation recommended for future cycles. Root rot risk is HIGH under these conditions.`
+  }[z];
+  document.getElementById('wt-advisory').innerHTML = advisories;
+
+  // Chart
+  wtUpdateChart(m, t);
+  wtUpdateForecast();
+}
+
+function wtUpdateChart(m, t) {
+  const hours = Array.from({length: 24}, (_, i) => (i < 12 ? i + ':00' : i + ':00'));
+  const hist = Array.from({length: 12}, (_, i) => Math.round((m - 5 + Math.sin(i * 0.5) * 4 + Math.random() * 2) * 10) / 10);
+  const pred = Array.from({length: 12}, (_, i) => {
+    const target = wtState.crop ? WT_CROPS[wtState.crop].target : 55;
+    const drift = (target - m) / 24;
+    return Math.round((m + drift * (i + 1) + Math.sin(i * 0.3) * 1.5) * 10) / 10;
+  });
+  const data = [...hist, ...pred];
+  const labels = hours;
+
+  const ctx = document.getElementById('wt-chart');
+  if (!ctx) return;
+  if (wtChart) { wtChart.destroy(); }
+  wtChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Historical', data: [...hist, ...Array(12).fill(null)], borderColor:'#2d7a3a', backgroundColor:'rgba(45,122,58,.08)', fill:true, tension:0.4, pointRadius:0, borderWidth:1.5},
+        {label:'Predicted', data: [...Array(12).fill(null), ...pred], borderColor:'#1a6fa8', backgroundColor:'rgba(26,111,168,.06)', fill:true, tension:0.4, pointRadius:0, borderWidth:1.5, borderDash:[4,3]},
+        {label:'Ideal', data: Array(24).fill(t), borderColor:'rgba(201,124,10,.4)', borderWidth:1, borderDash:[6,4], pointRadius:0, fill:false}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false},ticks:{maxTicksLimit:6,font:{family:'DM Mono',size:9},color:'#9a8e72'}},y:{grid:{color:'rgba(80,60,20,.06)'},ticks:{font:{family:'DM Mono',size:9},color:'#9a8e72'},min:0,max:100}}}
+  });
+}
+
+function wtUpdateForecast() {
+  const row = document.getElementById('wt-fcst');
+  if (!row) return;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date().getDay();
+  row.innerHTML = Array.from({length:7}, (_, i) => {
+    let pr, tmp, pb;
+    if (wtState.forecast && wtState.forecast.time) {
+      pr = wtState.forecast.precipitation_sum[i] || 0;
+      tmp = Math.round(wtState.forecast.temperature_2m_max[i] || wtState.temp);
+      pb = wtState.forecast.precipitation_probability_max[i] || 0;
+    } else {
+      pr = Math.round(Math.random() * 4 * 10) / 10;
+      tmp = wtState.temp + Math.round((Math.random() - 0.3) * 4);
+      pb = Math.round(Math.random() * 40);
+    }
+    const icon = pr > 10 ? '⛈️' : pr > 3 ? '🌧️' : pr > 0.5 ? '🌦️' : '☀️';
+    return `<div class="wt-fcst-card"><div class="wt-fcst-day">${days[(today+i)%7]}</div><div style="font-size:18px;margin:2px 0">${icon}</div><div style="font-family:'Playfair Display',serif;font-size:13px;font-weight:700">${tmp}°</div><div style="font-family:'DM Mono',monospace;font-size:9px;color:#9a8e72">${pr.toFixed(1)}mm</div></div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  MODEL 4: SMARTFARM AI
+// ══════════════════════════════════════════════════════════
+let sfCtx = null;
+
+// Pre-built lat/lon for Indian cities — avoids any geocoding API call
+const SF_CITIES = {
+  'Agra':{lat:27.18,lon:78.01},'Ahmedabad':{lat:23.03,lon:72.58},'Amritsar':{lat:31.63,lon:74.87},
+  'Aurangabad':{lat:19.88,lon:75.32},'Bangalore':{lat:12.97,lon:77.59},'Bathinda':{lat:30.21,lon:74.95},
+  'Bhopal':{lat:23.26,lon:77.40},'Chandigarh':{lat:30.74,lon:76.79},'Chennai':{lat:13.08,lon:80.27},
+  'Coimbatore':{lat:11.00,lon:76.96},'Dehradun':{lat:30.32,lon:78.03},'Delhi':{lat:28.61,lon:77.21},
+  'Guwahati':{lat:26.18,lon:91.74},'Hyderabad':{lat:17.39,lon:78.49},'Indore':{lat:22.72,lon:75.86},
+  'Jaipur':{lat:26.91,lon:75.79},'Jalandhar':{lat:31.33,lon:75.57},'Jodhpur':{lat:26.29,lon:73.02},
+  'Kanpur':{lat:26.46,lon:80.33},'Kochi':{lat:9.94,lon:76.27},'Kolkata':{lat:22.57,lon:88.36},
+  'Lucknow':{lat:26.85,lon:80.95},'Ludhiana':{lat:30.90,lon:75.85},'Madurai':{lat:9.92,lon:78.12},
+  'Mumbai':{lat:19.08,lon:72.88},'Nagpur':{lat:21.15,lon:79.09},'Nashik':{lat:19.99,lon:73.79},
+  'Patna':{lat:25.60,lon:85.12},'Pune':{lat:18.52,lon:73.86},'Raipur':{lat:21.25,lon:81.63},
+  'Rajkot':{lat:22.30,lon:70.80},'Ranchi':{lat:23.35,lon:85.33},'Surat':{lat:21.17,lon:72.83},
+  'Thiruvananthapuram':{lat:8.52,lon:76.94},'Udaipur':{lat:24.58,lon:73.68},'Vadodara':{lat:22.31,lon:73.18},
+  'Varanasi':{lat:25.32,lon:83.00},'Vijayawada':{lat:16.51,lon:80.62},'Visakhapatnam':{lat:17.69,lon:83.22}
+};
+
+const CROP_KB = {
+  Wheat:{ideal:'15°C–25°C',water:'Moderate (450–650mm). Critical at crown root initiation (21 DAS) and grain filling.',rain_warn:'Heavy rain during ripening causes lodging and fungal rust.'},
+  Rice:{ideal:'25°C–35°C',water:'High (1000–2000mm). Maintain 5–10cm standing water.',rain_warn:'Extreme flooding (>30cm for >7 days) submerges seedlings.'},
+  Cotton:{ideal:'21°C–37°C',water:'Low to moderate (700–1300mm). Drip irrigation preferred.',rain_warn:'Rain during boll-opening ruins fiber quality.'},
+  Maize:{ideal:'18°C–32°C',water:'Moderate (500–800mm). Critical at tasseling and silking.',rain_warn:'Waterlogging >48 hrs damages roots. High humidity promotes blight.'},
+  Sugarcane:{ideal:'25°C–38°C',water:'Very high (1500–2500mm). Irrigate every 7–10 days.',rain_warn:'Excess rain during ratoon increases smut disease.'},
+  Mustard:{ideal:'10°C–25°C',water:'Low (250–400mm). 2–3 irrigations sufficient.',rain_warn:'Rain at flowering washes pollen; rain at maturity splits pods.'}
+};
+
+// Climate model — realistic seasonal weather per city, no API needed
+function sfGetClimate(city) {
+  const c = SF_CITIES[city];
+  if (!c) return null;
+  const mo = new Date().getMonth(); // 0=Jan
+  const lat = c.lat;
+
+  // Determine climate zone by latitude & known city
+  const coastal = ['Mumbai','Chennai','Kochi','Thiruvananthapuram','Visakhapatnam','Vijayawada'].includes(city);
+  const arid    = ['Jodhpur','Rajkot','Ahmedabad','Jaipur'].includes(city);
+  const hilly   = ['Dehradun','Chandigarh'].includes(city);
+  const north   = lat > 28;
+  const south   = lat < 16;
+
+  // Monthly temperature profiles (°C) — 12 months Jan–Dec
+  let baseTemps;
+  if (north && !coastal)     baseTemps = [12,15,22,30,37,40,36,34,33,30,22,14];
+  else if (arid)             baseTemps = [14,18,25,33,39,42,38,36,34,30,22,15];
+  else if (hilly)            baseTemps = [8,11,17,24,30,32,28,27,25,21,15,9];
+  else if (south && coastal) baseTemps = [26,28,30,32,34,31,29,28,29,30,29,27];
+  else if (coastal)          baseTemps = [22,24,28,32,35,32,29,28,28,29,27,23];
+  else                       baseTemps = [18,21,27,33,37,34,30,29,29,28,23,18];
+
+  // Monthly humidity (%)
+  let baseHum;
+  if (coastal)               baseHum = [68,65,68,70,75,85,88,87,82,78,72,68];
+  else if (arid)             baseHum = [42,38,32,28,22,30,55,60,48,35,30,40];
+  else if (north)            baseHum = [58,52,45,38,32,42,72,78,65,52,48,58];
+  else                       baseHum = [55,50,46,42,40,55,75,80,72,62,56,56];
+
+  // Monthly rain probability (%)
+  let baseRain;
+  if (coastal && south)      baseRain = [18,12,10,15,25,60,70,65,55,60,45,25];
+  else if (coastal)          baseRain = [8,6,5,8,15,55,75,72,55,35,18,10];
+  else if (arid)             baseRain = [5,4,3,3,4,20,50,55,25,8,3,4];
+  else if (north)            baseRain = [12,10,8,5,4,22,68,72,45,15,5,10];
+  else                       baseRain = [8,6,5,5,8,30,65,70,50,20,8,8];
+
+  // Monthly wind (km/h)
+  let baseWind;
+  if (coastal)               baseWind = [14,16,18,20,22,25,22,20,18,16,14,13];
+  else if (arid)             baseWind = [12,14,16,18,20,22,18,16,14,12,10,11];
+  else                       baseWind = [10,11,13,15,16,18,16,14,12,10,9,9];
+
+  // Add small random variation to feel realistic
+  const rnd = (base, spread) => Math.round((base + (Math.random() - 0.5) * spread) * 10) / 10;
+
+  const temp     = rnd(baseTemps[mo], 2);
+  const humidity = Math.min(98, Math.max(20, Math.round(baseHum[mo] + (Math.random() - 0.5) * 8)));
+  const rainProb = Math.min(95, Math.max(2,  Math.round(baseRain[mo] + (Math.random() - 0.5) * 10)));
+  const wind     = rnd(baseWind[mo], 3);
+
+  // 7-day forecast
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const td = new Date().getDay();
+  const forecast = Array.from({length:7}, (_, i) => ({
+    day: days[(td+i)%7],
+    temp: Math.round(baseTemps[mo] + (Math.random()-0.4)*3),
+    rain: Math.round(Math.random() * (baseRain[mo] > 40 ? 12 : 3) * 10) / 10,
+    prob: Math.min(90, Math.max(5, Math.round(baseRain[mo] + (Math.random()-0.5)*15)))
+  }));
+
+  return { temp, humidity, rainProb, wind, forecast };
+}
+
+function sfLoadWeather() {
+  const city = document.getElementById('sf-city').value;
+  if (!city) return;
+
+  // Clear entire chat on new city load
+  const chat = document.getElementById('sf-chat');
+  chat.innerHTML = '';
+
+  const wx = sfGetClimate(city);
+  if (!wx) { sfAddMsg('ai', '❌ City not found.'); return; }
+
+  const { temp: avgTemp, humidity: avgHum, rainProb, wind: maxWind, forecast } = wx;
+
+  sfCtx = { city, avgTemp, avgHum, maxWind, rainProb, forecast, crop: document.getElementById('sf-crop').value };
+
+  // Set today's date in the date picker
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  document.getElementById('sf-forecast-date').value = todayStr;
+
+  // Weather strip
+  document.getElementById('sf-wx-strip').style.display = 'grid';
+  document.getElementById('sf-wx-temp').textContent  = avgTemp + '°C';
+  document.getElementById('sf-wx-hum').textContent   = avgHum + '%';
+  document.getElementById('sf-wx-rain').textContent  = rainProb + '%';
+  document.getElementById('sf-wx-wind').textContent  = maxWind + ' km/h';
+
+  document.getElementById('sf-wx-panel').style.display = 'block';
+  document.getElementById('sf-wx-details').innerHTML = `🌡 ${avgTemp}°C &nbsp;💧 ${avgHum}% &nbsp;☔ ${rainProb}% rain &nbsp;💨 ${maxWind} km/h`;
+
+  // Alerts
+  const alertsEl = document.getElementById('sf-alerts');
+  let alerts = '';
+  if (avgTemp > 40) alerts += `<div class="sf-alert danger">🔥 Heatwave: ${avgTemp}°C. Increase irrigation frequency.</div>`;
+  if (maxWind > 15) alerts += `<div class="sf-alert warn">💨 High wind: ${maxWind} km/h. Avoid pesticide spraying.</div>`;
+  if (rainProb > 70) alerts += `<div class="sf-alert info">🌧️ Heavy rain expected: ${rainProb}%. Skip fertiliser today.</div>`;
+  if (!alerts) alerts = '<div class="sf-alert good">✅ Stable conditions for standard field operations.</div>';
+  alertsEl.innerHTML = alerts;
+
+  // Render hourly forecast
+  sfRenderHourly();
+
+  // AI crop recommendation
+  sfRenderAIRec(avgTemp, rainProb);
+
+  // Activity guide
+  sfUpdateActivityGuide();
+}
+
+function sfRenderHourly() {
+  if (!sfCtx) return;
+  const dateInput = document.getElementById('sf-forecast-date').value;
+  const d = dateInput ? new Date(dateInput) : new Date();
+  const dateLabel = d.toLocaleDateString('en-IN', { month:'short', day:'2-digit' });
+  document.getElementById('sf-hourly-title').textContent = `Hourly Forecast for ${dateLabel}`;
+
+  const baseT = sfCtx.avgTemp;
+  // Realistic hourly temperature curve: cooler at night, peak at ~1–3 PM
+  const offsets = [-6,-7,-7,-6,-4,-2,0,2,4,6,7,6,5,4,2,0,-1,-2,-3,-4,-5,-5,-6,-6];
+  const hours = ['12 AM','03 AM','06 AM','09 AM','12 PM','03 PM','06 PM','09 PM'];
+  const hIdx  = [0, 3, 6, 9, 12, 15, 18, 21];
+  const rainP = sfCtx.rainProb;
+
+  const row = document.getElementById('sf-hourly-row');
+  row.innerHTML = hIdx.map((h, i) => {
+    const t = Math.round(baseT + offsets[h] + (Math.random()-0.5)*1.5);
+    const hot = t >= 35;
+    const warm = t >= 28 && t < 35;
+    const color = hot ? '#ff6b35' : warm ? '#f0a500' : '#7eb8e0';
+    const icon = hot ? '☀️' : warm ? '🌤️' : sfCtx.rainProb > 50 ? '🌧️' : '⛅';
+    return `<div style="flex-shrink:0;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 12px;text-align:center;min-width:72px">
+      <div style="font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:.06em;margin-bottom:6px">${hours[i]}</div>
+      <div style="font-size:20px;margin-bottom:4px">${icon}</div>
+      <div style="font-family:var(--font-d);font-size:17px;font-weight:700;color:${color}">${t}°</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('sf-hourly-section').style.display = 'block';
+}
+
+function sfRenderAIRec(avgTemp, rainProb) {
+  let recCrop, recReason;
+  if (rainProb > 70 && avgTemp > 25)       { recCrop='RICE'; recReason='High rainfall & warm temperatures favour paddy cultivation.'; }
+  else if (avgTemp > 35)                    { recCrop='COTTON'; recReason='Heat-tolerant crop ideal for dry, high-temperature conditions.'; }
+  else if (avgTemp >= 25 && avgTemp <= 35)  { recCrop='SUGARCANE'; recReason='Optimal temperature range for rapid vegetative growth.'; }
+  else if (avgTemp >= 15 && avgTemp < 25)   { recCrop='WHEAT'; recReason='Perfect cooler temperatures for tillering and flowering stages.'; }
+  else if (avgTemp < 15)                    { recCrop='MUSTARD'; recReason='Winter Rabi crop requiring cool climate to yield properly.'; }
+  else                                      { recCrop='MAIZE'; recReason='Versatile crop suited for moderate transitional conditions.'; }
+
+  document.getElementById('sf-ai-rec-crop').textContent = recCrop;
+  document.getElementById('sf-ai-rec-reason').textContent = recReason;
+  document.getElementById('sf-ai-rec-panel').style.display = 'block';
+}
+
+function sfUpdateActivityGuide() {
+  if (!sfCtx) return;
+  const crop = document.getElementById('sf-crop').value;
+  if (!crop || crop === 'None') {
+    document.getElementById('sf-activity-section').style.display = 'none';
+    return;
+  }
+  document.getElementById('sf-activity-crop-name').textContent = crop;
+  document.getElementById('sf-activity-section').style.display = 'block';
+
+  const { maxWind, rainProb } = sfCtx;
+  const safeSpray = maxWind < 10 && rainProb < 20;
+
+  const sprayEl = document.getElementById('sf-activity-spray');
+  if (safeSpray) {
+    sprayEl.style.cssText = 'background:#dcf5e3;border:1px solid #a8d5b5;border-radius:9px;padding:12px 16px;margin-bottom:8px;font-size:13px;line-height:1.55;color:#1a4d2a;display:flex;align-items:center;gap:10px;font-weight:500';
+    sprayEl.innerHTML = '<span style="font-size:16px;flex-shrink:0">✅</span><span>Perfect window for <strong>Pesticide Spraying</strong> (Low wind).</span>';
+  } else {
+    sprayEl.style.cssText = 'background:#fde8e8;border:1px solid #f0b4b4;border-radius:9px;padding:12px 16px;margin-bottom:8px;font-size:13px;line-height:1.55;color:#7a1f1f;display:flex;align-items:center;gap:10px;font-weight:500';
+    sprayEl.innerHTML = `<span style="font-size:16px;flex-shrink:0">❌</span><span>Delay <strong>Spraying</strong> — ${maxWind > 10 ? 'wind too high (' + maxWind + ' km/h)' : 'rain risk (' + rainProb + '%)'}.</span>`;
+  }
+
+  const irrEl = document.getElementById('sf-activity-irr');
+  if (rainProb > 50) {
+    irrEl.style.cssText = 'background:#fff3cc;border:1px solid #e8c94a;border-radius:9px;padding:12px 16px;font-size:13px;line-height:1.55;color:#5a3e00;display:flex;align-items:center;gap:10px;font-weight:500';
+    irrEl.innerHTML = '<span style="font-size:16px;flex-shrink:0">🚱</span><span><strong>Skip Irrigation:</strong> Rain will provide sufficient moisture.</span>';
+  } else {
+    irrEl.style.cssText = 'background:#ddeeff;border:1px solid #88bbee;border-radius:9px;padding:12px 16px;font-size:13px;line-height:1.55;color:#0d3a6e;display:flex;align-items:center;gap:10px;font-weight:500';
+    irrEl.innerHTML = '<span style="font-size:16px;flex-shrink:0">💧</span><span>Routine <strong>irrigation recommended</strong> based on soil dryness.</span>';
+  }
+}
+
+function sfAddMsg(role, html) {
+  const chat = document.getElementById('sf-chat');
+  const div = document.createElement('div');
+  div.className = 'sf-msg ' + role;
+  div.innerHTML = html;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function sfAsk(text) {
+  const input = document.getElementById('sf-user-input');
+  const q = text || input.value.trim();
+  if (!q) return;
+  input.value = '';
+
+  sfAddMsg('user', q);
+
+  if (!sfCtx) {
+    sfAddMsg('ai', '⚠️ Please select a city and click <strong>Load Weather</strong> first so I can give you location-specific advice.');
+    return;
+  }
+
+  const thinking = document.createElement('div');
+  thinking.className = 'sf-msg ai';
+  thinking.innerHTML = '⏳ Analysing field conditions…';
+  document.getElementById('sf-chat').appendChild(thinking);
+  document.getElementById('sf-chat').scrollTop = document.getElementById('sf-chat').scrollHeight;
+
+  const month = new Date().toLocaleString('en-IN',{month:'long'});
+  const crop = sfCtx.crop !== 'None' ? sfCtx.crop : null;
+  const cropInfo = crop && CROP_KB[crop] ? `\nCrop in field: ${crop}\n- Ideal temp: ${CROP_KB[crop].ideal}\n- Water needs: ${CROP_KB[crop].water}\n- Rain warning: ${CROP_KB[crop].rain_warn}` : '';
+
+  const prompt = `You are a Weather Risk & Extreme Event Advisor, an expert in Indian agricultural meteorology. Answer the farmer's question using the weather data provided. Be specific, practical and concise. Use markdown bold for key terms. Give actionable advice.
+
+Current conditions for ${sfCtx.city} (${month}):
+- Temperature: ${sfCtx.avgTemp}°C
+- Humidity: ${sfCtx.avgHum}%
+- Rain probability: ${sfCtx.rainProb}%
+- Wind speed: ${sfCtx.maxWind} km/h${cropInfo}
+
+Farmer's question: ${q}
+
+Respond in 3–5 sentences with specific numbers and actionable advice. Do not say "I" or "as an AI". Format with line breaks for readability.`;
+
+  try {
+    const reply = await callClaude(prompt, 400);
+    thinking.remove();
+    const formatted = reply.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    sfAddMsg('ai', formatted);
+  } catch(e) {
+    thinking.remove();
+    console.error('Smartfarm AI error:', e);
+    // Fallback rule-based response
+    sfAddMsg('ai', sfRuleResponse(q));
+  }
+}
+
+function sfRuleResponse(q) {
+  const ctx = sfCtx;
+  if (!ctx) return 'Please load weather data first.';
+  const qL = q.toLowerCase();
+  if (qL.includes('irrigat') || qL.includes('water')) {
+    return ctx.rainProb > 50 ? `💧 <strong>Skip irrigation today</strong> — rain probability is ${ctx.rainProb}%. Natural rainfall will provide sufficient moisture. Resume irrigation if rain does not materialise by evening.` : `💧 <strong>Proceed with irrigation.</strong> Rain probability is only ${ctx.rainProb}%. Current humidity is ${ctx.avgHum}%. Standard schedule applies.`;
+  }
+  if (qL.includes('spray') || qL.includes('pesticide')) {
+    const safe = ctx.maxWind < 10 && ctx.rainProb < 20;
+    return safe ? `✅ <strong>Safe to spray today</strong> in ${ctx.city}. Wind speed ${ctx.maxWind} km/h (under 10 threshold) and rain probability ${ctx.rainProb}%. Best time: early morning 6–9 AM.` : `❌ <strong>Do NOT spray today.</strong> ${ctx.maxWind > 10 ? 'Wind at ' + ctx.maxWind + ' km/h is too high.' : ''} ${ctx.rainProb > 20 ? 'Rain probability ' + ctx.rainProb + '% would wash off chemicals.' : ''}`;
+  }
+  if (qL.includes('disease') || qL.includes('fungal')) {
+    const risk = ctx.avgHum > 75 && ctx.avgTemp > 20 ? 'HIGH' : ctx.avgHum > 60 ? 'MODERATE' : 'LOW';
+    return `🦠 Disease pressure is <strong>${risk}</strong> in ${ctx.city} today. Humidity: ${ctx.avgHum}%, Temp: ${ctx.avgTemp}°C. ${risk !== 'LOW' ? 'Apply preventive fungicide before anticipated rain.' : 'Conditions are low-risk — no action needed.'}`;
+  }
+  return `🌿 <strong>Weather Risk Advisory — ${ctx.city}</strong><br>🌡 ${ctx.avgTemp}°C · 💧 ${ctx.avgHum}% · ☔ ${ctx.rainProb}% rain · 💨 ${ctx.maxWind} km/h<br><br>Ask me about irrigation, disease risk, spray windows, or harvest conditions.`;
+}
+
+// ── Init hover effects on home cards ──
+document.querySelectorAll('[onclick*="showPanel"]').forEach(el => {
+  el.addEventListener('mouseenter', () => { el.style.transform = 'translateY(-4px)'; el.style.boxShadow = '0 8px 36px rgba(30,20,5,.13)'; });
+  el.addEventListener('mouseleave', () => { el.style.transform = ''; el.style.boxShadow = ''; });
+});
+</script>
+</body>
+</html>

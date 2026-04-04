@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WaterTwin India — Smart Irrigation Digital Twin</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#f5f2eb; --bg2:#ede9de; --bg3:#e4dfd2; --bg4:#d8d2c3; --card:#faf8f3;
+  --border:rgba(80,60,20,0.10); --border2:rgba(80,60,20,0.18);
+  --text:#1e1a10; --text2:#5a5240; --text3:#9a8e72;
+  --green:#2d7a3a; --green2:#3fa050; --greenl:#e8f5eb;
+  --amber:#c97c0a; --amberl:#fdf3e0;
+  --red:#c0392b; --redl:#fdecea;
+  --orange:#d4600a; --orangel:#fef0e6;
+  --blue:#1a6fa8; --bluel:#e8f2fa;
+  --soil:#8B6340; --soill:#f5ece3;
+  --purple:#6b3fa0; --purplel:#f0eaf8;
+  --font-d:'Baloo 2',cursive; --font-b:'DM Sans',sans-serif; --font-m:'DM Mono',monospace;
+  --r:12px; --rs:8px;
+  --shadow:0 2px 12px rgba(80,60,20,0.08); --shadow2:0 4px 24px rgba(80,60,20,0.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px;line-height:1.6;min-height:100vh}
+
+/* HEADER */
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
+.hdr-left{display:flex;align-items:center;gap:14px}
+.hdr-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#2d7a3a,#5ab865);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(45,122,58,0.35)}
+.hdr-logo svg{width:20px;height:20px}
+.hdr-title{font-family:var(--font-d);font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.02em}
+.hdr-sub{font-size:11px;color:var(--text3);font-family:var(--font-m);letter-spacing:0.04em}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.live-badge{display:flex;align-items:center;gap:6px;background:var(--greenl);border:1px solid rgba(45,122,58,0.25);padding:4px 12px;border-radius:20px;font-family:var(--font-m);font-size:10px;color:var(--green);letter-spacing:0.06em;text-transform:uppercase}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:livepulse 2s ease-in-out infinite}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.75)}}
+.time-badge{font-family:var(--font-m);font-size:11px;color:var(--text3);background:var(--bg2);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
+.zone-hdr-pill{padding:5px 16px;border-radius:20px;font-family:var(--font-m);font-size:11px;font-weight:500;letter-spacing:0.05em;text-transform:uppercase;transition:all 0.3s;border:1px solid}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tab-btn{padding:12px 20px;font-family:var(--font-m);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text2)}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);background:var(--card)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:310px 1fr;min-height:calc(100vh - 62px)}
+
+/* SIDEBAR */
+.sidebar{background:var(--card);border-right:1px solid var(--border);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;max-height:calc(100vh - 62px);position:sticky;top:62px}
+.sec-head{font-family:var(--font-m);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-head::after{content:'';flex:1;height:1px;background:var(--border)}
+.region-info{margin-top:8px;padding:10px 12px;background:var(--bg2);border-radius:var(--rs);border:1px solid var(--border);font-size:12px;color:var(--text2);line-height:1.6}
+.region-info b{color:var(--soil);font-weight:600}
+.crop-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.crop-chip{padding:8px 6px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg2);text-align:center;cursor:pointer;transition:all 0.2s;font-size:12px;color:var(--text2)}
+.crop-chip:hover{border-color:var(--green);color:var(--green);background:var(--greenl)}
+.crop-chip.active{border-color:var(--green);color:var(--green);background:var(--greenl);font-weight:500}
+.crop-chip .crop-icon{font-size:18px;display:block;margin-bottom:2px}
+.moisture-manual{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);padding:12px}
+.moisture-big{font-family:var(--font-d);font-size:42px;font-weight:800;letter-spacing:-0.03em;line-height:1;text-align:center;margin-bottom:8px;transition:color 0.3s}
+input[type=range]{-webkit-appearance:none;-moz-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;background:var(--bg4);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--green);border:3px solid var(--card);box-shadow:0 1px 4px rgba(45,122,58,0.4);cursor:pointer;transition:transform 0.15s}
+input[type=range]:hover::-webkit-slider-thumb{transform:scale(1.15)}
+input[type=range].warn::-webkit-slider-thumb{background:var(--amber)}
+input[type=range].danger::-webkit-slider-thumb{background:var(--red)}
+.zone-bar{height:7px;border-radius:4px;margin:10px 0 6px;background:linear-gradient(to right,#e05c22 0%,#e05c22 30%,#2d7a3a 30%,#2d7a3a 70%,#d4600a 70%,#d4600a 85%,#c0392b 85%,#c0392b 95%,#8b0000 95%,#8b0000 100%);position:relative}
+.zone-needle{position:absolute;top:-5px;width:3px;height:17px;background:var(--text);border-radius:2px;transform:translateX(-50%);transition:left 0.4s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 1px 4px rgba(0,0,0,0.25)}
+.zone-bar-labels{display:flex;font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:0.04em;margin-top:2px}
+.zone-bar-labels span{text-align:center}
+.inp-row{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.inp-row-label{display:flex;justify-content:space-between;align-items:center}
+.inp-row-label span{font-size:12px;color:var(--text2)}
+.inp-row-label b{font-family:var(--font-m);font-size:12px;color:var(--text);font-weight:500}
+.sel{width:100%;padding:7px 30px 7px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:var(--font-b);font-size:12px;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239a8e72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+
+/* MAIN */
+.main{padding:20px 24px;display:flex;flex-direction:column;gap:18px;overflow-y:auto}
+.weather-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.wx-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);transition:transform 0.2s}
+.wx-card:hover{transform:translateY(-1px);box-shadow:var(--shadow2)}
+.wx-icon{font-size:22px;flex-shrink:0}
+.wx-label{font-family:var(--font-m);font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:2px}
+.wx-value{font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text);letter-spacing:-0.02em}
+.wx-sub{font-size:10px;color:var(--text3)}
+.alert-wrap{border-radius:var(--r);padding:16px 20px;border-left:5px solid;border-top:1px solid;border-right:1px solid;border-bottom:1px solid;transition:all 0.35s ease;box-shadow:var(--shadow)}
+.alert-wrap.safe{background:var(--greenl);border-color:var(--green)}
+.alert-wrap.low{background:var(--amberl);border-color:var(--amber)}
+.alert-wrap.high{background:var(--orangel);border-color:var(--orange)}
+.alert-wrap.excess{background:var(--redl);border-color:var(--red)}
+.alert-wrap.critical{background:#fde0de;border-color:var(--red);animation:shake 0.4s ease}
+/* season warning bar */
+.season-warn{background:var(--purplel);border:1px solid rgba(107,63,160,0.25);border-radius:var(--rs);padding:9px 14px;font-size:12px;color:var(--purple);display:none;margin-bottom:-8px}
+.season-warn b{font-weight:600}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.alert-title{font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:4px}
+.alert-body{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:6px}
+.alert-action{font-family:var(--font-m);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;font-weight:500}
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow);transition:transform 0.2s,box-shadow 0.2s}
+.mc:hover{transform:translateY(-2px);box-shadow:var(--shadow2)}
+.mc-label{font-family:var(--font-m);font-size:9px;letter-spacing:0.09em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.mc-val{font-family:var(--font-d);font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1;color:var(--text);transition:color 0.3s}
+.mc-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.twin-label{font-family:var(--font-m);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.twin-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 12px;text-align:center;box-shadow:var(--shadow);transition:all 0.3s}
+.tc-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+.tc-val{font-family:var(--font-d);font-size:26px;font-weight:800;letter-spacing:-0.03em;line-height:1;transition:color 0.3s}
+.tc-pill{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:20px;font-family:var(--font-m);font-size:9px;letter-spacing:0.05em;text-transform:uppercase;font-weight:500;border:1px solid;transition:all 0.3s}
+.p-safe{background:var(--greenl);color:var(--green);border-color:rgba(45,122,58,0.3)}
+.p-low{background:var(--amberl);color:var(--amber);border-color:rgba(201,124,10,0.3)}
+.p-high{background:var(--orangel);color:var(--orange);border-color:rgba(212,96,10,0.3)}
+.p-excess{background:var(--redl);color:var(--red);border-color:rgba(192,57,43,0.3)}
+.p-critical{background:#fde0de;color:var(--red);border-color:rgba(192,57,43,0.5)}
+.btm{display:grid;grid-template-columns:1.2fr 0.8fr;gap:18px}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow)}
+.panel-title{font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;letter-spacing:-0.01em}
+.chart-wrap{position:relative;height:170px}
+
+/* SOIL PANEL */
+.soil-panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.soil-stat{background:var(--soill);border:1px solid rgba(139,99,64,0.15);border-radius:var(--rs);padding:10px 12px}
+.soil-stat-label{font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--soil);margin-bottom:3px;opacity:0.8}
+.soil-stat-val{font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--soil)}
+.soil-stat-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.soil-profile-bar{height:10px;border-radius:5px;margin:4px 0 2px;position:relative;overflow:hidden}
+.soil-profile-fill{height:100%;border-radius:5px;transition:width 0.5s ease}
+.soil-texture-row{display:flex;gap:4px;margin-bottom:10px}
+.soil-texture-seg{height:14px;border-radius:3px;transition:flex 0.5s ease;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--font-m);color:#fff;overflow:hidden;white-space:nowrap;padding:0 4px}
+.soil-advisory{background:var(--soill);border-left:3px solid var(--soil);padding:10px 12px;border-radius:0 var(--rs) var(--rs) 0;font-size:12px;color:var(--text2);line-height:1.6}
+.soil-advisory b{color:var(--soil)}
+
+/* CROP CALENDAR */
+.cal-months{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:8px}
+.cal-month{height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-m);font-size:8px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid transparent;transition:all 0.3s;position:relative}
+.cal-month.today-marker::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid var(--text3)}
+.cal-month.m-off{background:var(--bg3);color:var(--text3);border-color:var(--border)}
+.cal-month.m-sow{background:#d4edda;color:#155724;border-color:rgba(21,87,36,0.25)}
+.cal-month.m-grow{background:#c3e6cb;color:#155724;border-color:rgba(21,87,36,0.3)}
+.cal-month.m-peak{background:#28a745;color:#fff;border-color:#1e7e34}
+.cal-month.m-harvest{background:var(--amberl);color:var(--amber);border-color:rgba(201,124,10,0.3)}
+.cal-month.m-rest{background:var(--bg2);color:var(--text3);border-color:var(--border)}
+.cal-month.m-current-phase{box-shadow:0 0 0 2px var(--green)}
+.cal-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.cal-leg-item{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:0.04em;text-transform:uppercase}
+.cal-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.cal-phase-now{background:var(--greenl);border:1px solid rgba(45,122,58,0.3);border-radius:var(--rs);padding:10px 14px;margin-bottom:12px}
+.cal-phase-title{font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px}
+.cal-phase-body{font-size:12px;color:var(--text2);line-height:1.6}
+.cal-phase-body b{color:var(--text);font-weight:500}
+.water-demand-bar{margin-top:10px}
+.wdb-label{font-family:var(--font-m);font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.wdb-months{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.wdb-bar{border-radius:3px;transition:height 0.4s ease,background 0.3s;min-height:4px;position:relative}
+.wdb-wrap{display:flex;flex-direction:column;align-items:center;gap:2px}
+.wdb-mn{font-family:var(--font-m);font-size:8px;color:var(--text3);letter-spacing:0.03em}
+
+/* Crop + sev combined panel */
+.crop-info-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:12px}
+.crop-info-title{font-family:var(--font-d);font-size:13px;font-weight:700;margin-bottom:6px;color:var(--soil)}
+.crop-info-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.crop-info-row span{color:var(--text3)}
+.crop-info-row b{color:var(--text);font-weight:500}
+.sev-row{display:flex;gap:8px;margin-bottom:12px}
+.sev-chip{flex:1;padding:8px 4px;border-radius:var(--rs);text-align:center;font-family:var(--font-m);font-size:9px;letter-spacing:0.04em;text-transform:uppercase;border:1px solid;opacity:0.3;transition:opacity 0.3s;line-height:1.5}
+.sev-chip.on{opacity:1}
+.s-mild{background:var(--amberl);color:var(--amber);border-color:rgba(201,124,10,0.3)}
+.s-mod{background:var(--orangel);color:var(--orange);border-color:rgba(212,96,10,0.3)}
+.s-crit{background:var(--redl);color:var(--red);border-color:rgba(192,57,43,0.3)}
+.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.sim-btn{padding:8px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg2);color:var(--text2);font-family:var(--font-m);font-size:10px;letter-spacing:0.04em;cursor:pointer;text-align:center;transition:all 0.2s;text-transform:uppercase}
+.sim-btn:hover{background:var(--bg3);border-color:var(--border2);color:var(--text)}
+.sim-btn.active{background:var(--greenl);border-color:rgba(45,122,58,0.35);color:var(--green)}
+.sim-result{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;min-height:72px;font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-line}
+.sim-result-title{font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.eff-row{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.eff-num{font-family:var(--font-d);font-size:40px;font-weight:800;letter-spacing:-0.04em;line-height:1;transition:color 0.3s}
+.eff-track{flex:1;height:7px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.eff-fill{height:100%;border-radius:4px;transition:width 0.5s ease,background 0.3s}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.mini-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:9px 11px}
+.mini-label{font-family:var(--font-m);font-size:9px;letter-spacing:0.07em;text-transform:uppercase;color:var(--text3);margin-bottom:3px}
+.mini-val{font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--text)}
+.fcst-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.fcst-card{flex-shrink:0;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:8px 10px;text-align:center;min-width:62px}
+.fcst-day{font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:4px}
+.fcst-icon{font-size:18px;margin-bottom:3px}
+.fcst-temp{font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--text)}
+.fcst-rain{font-size:10px;color:var(--blue);font-family:var(--font-m)}
+.error-notice{background:var(--amberl);border:1px solid rgba(201,124,10,0.3);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:var(--amber);font-family:var(--font-m);display:none;margin-bottom:-8px}
+.loading-overlay{position:fixed;inset:0;background:rgba(245,242,235,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;transition:opacity 0.4s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-spinner{width:48px;height:48px;border:3px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text)}
+.loading-sub{font-family:var(--font-m);font-size:11px;color:var(--text3);letter-spacing:0.06em;margin-top:4px}
+.footer{text-align:center;font-family:var(--font-m);font-size:10px;letter-spacing:0.06em;color:var(--text3);padding:14px 0 4px;border-top:1px solid var(--border);text-transform:uppercase;margin-top:4px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@media(max-width:1100px){.app{grid-template-columns:1fr}.sidebar{position:static;max-height:none}.weather-strip{grid-template-columns:repeat(3,1fr)}.metric-row{grid-template-columns:1fr 1fr}.twin-row{grid-template-columns:1fr 1fr}.btm{grid-template-columns:1fr}}
+@media(max-width:560px){.weather-strip{grid-template-columns:1fr 1fr}.metric-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Fetching real-time data…</div>
+  <div class="loading-sub" id="loadingSub">Connecting to Open-Meteo weather API</div>
+</div>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <div class="hdr-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3C12 3 5.5 10 5.5 15.5a6.5 6.5 0 0013 0C18.5 10 12 3 12 3z" fill="white" fill-opacity="0.9"/><line x1="12" y1="10" x2="12" y2="19" stroke="#2d7a3a" stroke-width="1.8" stroke-linecap="round"/><line x1="9.5" y1="14" x2="12" y2="11.5" stroke="#2d7a3a" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div class="hdr-title">WaterTwin India</div>
+      <div class="hdr-sub">Smart Irrigation · Real-Time Weather · Soil Data · Crop Calendar</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-badge"><div class="live-dot"></div>Live Data</div>
+    <div class="time-badge" id="timeBadge">--:-- IST</div>
+    <div class="zone-hdr-pill p-safe" id="topPill">Safe Zone</div>
+  </div>
+</header>
+
+<div class="app">
+<aside class="sidebar">
+  <div>
+    <div class="sec-head">Select Region</div>
+    <select id="regionSelect" onchange="onRegionChange()" style="width:100%;padding:10px 32px 10px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-family:var(--font-b);font-size:14px;font-weight:500;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27 viewBox=%270 0 12 8%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 stroke=%27%239a8e72%27 stroke-width=%271.5%27 fill=%27none%27 stroke-linecap=%27round%27/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 12px center">
+      <optgroup label="North India">
+        <option value="punjab">Punjab</option>
+        <option value="haryana">Haryana</option>
+        <option value="up">Uttar Pradesh</option>
+        <option value="rajasthan">Rajasthan</option>
+        <option value="himachal">Himachal Pradesh</option>
+      </optgroup>
+      <optgroup label="South India">
+        <option value="ap">Andhra Pradesh</option>
+        <option value="telangana">Telangana</option>
+        <option value="karnataka">Karnataka</option>
+        <option value="tamilnadu">Tamil Nadu</option>
+        <option value="kerala">Kerala</option>
+      </optgroup>
+      <optgroup label="West India">
+        <option value="gujarat">Gujarat</option>
+        <option value="maharashtra">Maharashtra</option>
+        <option value="goa">Goa</option>
+      </optgroup>
+      <optgroup label="East India">
+        <option value="wb">West Bengal</option>
+        <option value="odisha">Odisha</option>
+        <option value="bihar">Bihar</option>
+        <option value="assam">Assam</option>
+      </optgroup>
+      <optgroup label="Central India">
+        <option value="mp">Madhya Pradesh</option>
+        <option value="chhattisgarh">Chhattisgarh</option>
+      </optgroup>
+    </select>
+    <div class="region-info" id="regionInfo">Loading…</div>
+  </div>
+  <div>
+    <div class="sec-head">Select Crop</div>
+    <div class="crop-grid" id="cropGrid"></div>
+  </div>
+  <div>
+    <div class="sec-head">Soil Moisture Input</div>
+    <div class="moisture-manual">
+      <div class="moisture-big" id="moistureBig" style="color:var(--green)">45%</div>
+      <input type="range" id="moistureSlider" min="0" max="100" value="45" step="1" oninput="onManualMoisture()">
+      <div class="zone-bar" style="margin-top:10px"><div class="zone-needle" id="zoneNeedle" style="left:45%"></div></div>
+      <div class="zone-bar-labels">
+        <span style="flex:30">Low</span><span style="flex:40;text-align:center">Safe</span>
+        <span style="flex:15;text-align:center">High</span><span style="flex:15;text-align:right">Excess</span>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="sec-head">Manual Overrides</div>
+    <div class="inp-row">
+      <div class="inp-row-label"><span>Last irrigation (hrs ago)</span><b id="v-lastirr">12 h</b></div>
+      <input type="range" id="lastirr" min="0" max="72" value="12" step="1" oninput="onSlider('lastirr','v-lastirr','h');runEngine()">
+    </div>
+    <div class="inp-row">
+      <div class="inp-row-label"><span>Previous water applied</span><b id="v-prevwater">10 L</b></div>
+      <input type="range" id="prevwater" min="0" max="60" value="10" step="1" oninput="onSlider('prevwater','v-prevwater','L');runEngine()">
+    </div>
+    <div class="inp-row">
+      <div class="inp-row-label"><span>Field water level</span></div>
+      <select id="wlevel" onchange="runEngine()" class="sel">
+        <option value="dry">Dry — visibly parched</option>
+        <option value="low">Low — surface cracking</option>
+        <option value="normal" selected>Normal</option>
+        <option value="high">High — waterlogged patches</option>
+        <option value="standing">Standing water visible</option>
+      </select>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="error-notice" id="errorNotice">⚠ Could not fetch live weather. Using regional climate estimates.</div>
+  <div class="season-warn" id="seasonWarn"></div>
+
+  <!-- WEATHER STRIP -->
+  <div class="weather-strip">
+    <div class="wx-card"><div class="wx-icon">🌡️</div><div><div class="wx-label">Temperature</div><div class="wx-value" id="wx-temp">--°C</div><div class="wx-sub">Real-time</div></div></div>
+    <div class="wx-card"><div class="wx-icon">💧</div><div><div class="wx-label">Humidity</div><div class="wx-value" id="wx-humid">--%</div><div class="wx-sub">Relative</div></div></div>
+    <div class="wx-card"><div class="wx-icon">🌧️</div><div><div class="wx-label">Rain Today</div><div class="wx-value" id="wx-rain">-- mm</div><div class="wx-sub">Precipitation</div></div></div>
+    <div class="wx-card"><div class="wx-icon">🌬️</div><div><div class="wx-label">Wind Speed</div><div class="wx-value" id="wx-wind">-- km/h</div><div class="wx-sub">Surface</div></div></div>
+    <div class="wx-card"><div class="wx-icon">☀️</div><div><div class="wx-label">ET Rate</div><div class="wx-value" id="wx-et">-- mm</div><div class="wx-sub">Evapotransp./day</div></div></div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert-wrap safe" id="alertWrap">
+    <div class="alert-title" id="alertTitle" style="color:var(--green)">Safe Zone — No Irrigation Needed</div>
+    <div class="alert-body" id="alertBody">Field moisture is optimal.</div>
+    <div class="alert-action" id="alertAction" style="color:var(--green)">→ Action: No irrigation required</div>
+  </div>
+
+  <!-- METRIC CARDS -->
+  <div class="metric-row">
+    <div class="mc"><div class="mc-label">Current Moisture</div><div class="mc-val" id="mc-moisture" style="color:var(--green)">45%</div><div class="mc-sub" id="mc-moisture-sub">Safe zone · Loam</div></div>
+    <div class="mc"><div class="mc-label">Recommended Water</div><div class="mc-val" id="mc-water" style="color:var(--text3)">0 L</div><div class="mc-sub" id="mc-water-sub">No irrigation needed</div></div>
+    <div class="mc"><div class="mc-label">Irrigation Timing</div><div class="mc-val" id="mc-timing" style="font-size:16px;padding-top:4px">No action</div><div class="mc-sub">Based on ET + rain forecast</div></div>
+    <div class="mc"><div class="mc-label">Efficiency Score</div><div class="mc-val" id="mc-eff" style="color:var(--green)">96%</div><div class="mc-sub" id="mc-eff-sub">Optimal</div></div>
+  </div>
+
+  <!-- DIGITAL TWIN -->
+  <div>
+    <div class="twin-label">Digital Twin — Predicted Field State</div>
+    <div class="twin-row">
+      <div class="tc"><div class="tc-lbl">Current</div><div class="tc-val" id="tw0">45%</div><div class="tc-pill p-safe" id="tw0p">Safe</div></div>
+      <div class="tc"><div class="tc-lbl">After Irrigation</div><div class="tc-val" id="tw1" style="color:var(--text3)">—</div><div class="tc-pill" id="tw1p" style="background:var(--bg3);color:var(--text3);border-color:var(--border)">—</div></div>
+      <div class="tc"><div class="tc-lbl">After Rainfall</div><div class="tc-val" id="tw2" style="color:var(--text3)">—</div><div class="tc-pill" id="tw2p" style="background:var(--bg3);color:var(--text3);border-color:var(--border)">—</div></div>
+      <div class="tc"><div class="tc-lbl">Irr + Rain</div><div class="tc-val" id="tw3" style="color:var(--text3)">—</div><div class="tc-pill" id="tw3p" style="background:var(--bg3);color:var(--text3);border-color:var(--border)">—</div></div>
+    </div>
+  </div>
+
+  <!-- TABS for bottom section -->
+  <div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-trend',this)">📈 Trend & Forecast</button>
+      <button class="tab-btn" onclick="switchTab('tab-soil',this)">🌱 Soil Profile</button>
+      <button class="tab-btn" onclick="switchTab('tab-calendar',this)">📅 Crop Calendar</button>
+      <button class="tab-btn" onclick="switchTab('tab-analysis',this)">⚙ Analysis & Sim</button>
+    </div>
+
+    <!-- TAB: TREND -->
+    <div id="tab-trend" class="tab-panel active" style="padding-top:16px">
+      <div class="btm">
+        <div class="panel">
+          <div class="panel-title">Moisture Trend — 24h Historical + Predicted</div>
+          <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+          <div style="display:flex;gap:14px;margin-top:8px;font-family:var(--font-m);font-size:9px;color:var(--text3);flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:var(--green);display:inline-block;border-radius:1px"></span>Historical</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:var(--blue);display:inline-block;border-radius:1px"></span>Predicted</span>
+            <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:var(--amber);display:inline-block;border-radius:1px;opacity:0.5"></span>Safe range</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">7-Day Rain Forecast</div>
+          <div class="fcst-row" id="fcstRow"></div>
+          <div style="margin-top:16px">
+            <div class="panel-title" style="margin-bottom:10px">Crop &amp; Water Zone</div>
+            <div class="crop-info-box" id="cropInfoBox">
+              <div class="crop-info-title" id="ciName">Select a crop</div>
+              <div class="crop-info-row"><span>Water need</span><b id="ciWater">—</b></div>
+              <div class="crop-info-row"><span>Ideal moisture</span><b id="ciMoist">—</b></div>
+              <div class="crop-info-row"><span>Season</span><b id="ciSeason">—</b></div>
+            </div>
+            <div class="sev-row">
+              <div class="sev-chip s-mild" id="sev0">Mild<br><span style="font-size:8px">High zone</span></div>
+              <div class="sev-chip s-mod" id="sev1">Moderate<br><span style="font-size:8px">Excess zone</span></div>
+              <div class="sev-chip s-crit" id="sev2">Critical<br><span style="font-size:8px">&gt;95%</span></div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6" id="sevText">No excess water risk.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: SOIL PROFILE -->
+    <div id="tab-soil" class="tab-panel" style="padding-top:16px">
+      <div class="btm">
+        <div class="panel">
+          <div class="panel-title" id="soilPanelTitle">Soil Profile</div>
+          <div class="soil-panel-grid" id="soilStatGrid">
+            <div class="soil-stat"><div class="soil-stat-label">Soil Type</div><div class="soil-stat-val" id="ss-type">—</div><div class="soil-stat-sub" id="ss-type-sub">—</div></div>
+            <div class="soil-stat"><div class="soil-stat-label">pH Range</div><div class="soil-stat-val" id="ss-ph">—</div><div class="soil-stat-sub" id="ss-ph-sub">—</div></div>
+            <div class="soil-stat"><div class="soil-stat-label">Water Holding</div><div class="soil-stat-val" id="ss-whc">—</div><div class="soil-stat-sub" id="ss-whc-sub">mm/m</div></div>
+            <div class="soil-stat"><div class="soil-stat-label">Drainage Class</div><div class="soil-stat-val" id="ss-drain">—</div><div class="soil-stat-sub" id="ss-drain-sub">—</div></div>
+            <div class="soil-stat"><div class="soil-stat-label">Organic Matter</div><div class="soil-stat-val" id="ss-om">—</div><div class="soil-stat-sub" id="ss-om-sub">% (ICAR avg)</div></div>
+            <div class="soil-stat"><div class="soil-stat-label">Nitrogen Status</div><div class="soil-stat-val" id="ss-n">—</div><div class="soil-stat-sub" id="ss-n-sub">—</div></div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Soil Texture Composition</div>
+            <div class="soil-texture-row" id="textureBar"></div>
+            <div style="display:flex;gap:12px;margin-top:5px;font-family:var(--font-m);font-size:9px;color:var(--text3)">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#c8976e;border-radius:2px;display:inline-block"></span>Sand</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#8B6340;border-radius:2px;display:inline-block"></span>Silt</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;background:#5a3e28;border-radius:2px;display:inline-block"></span>Clay</span>
+            </div>
+          </div>
+          <div style="margin-bottom:10px">
+            <div style="font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Moisture Retention Profile</div>
+            <div style="font-size:10px;color:var(--text3);display:flex;justify-content:space-between;margin-bottom:3px"><span>Wilting Point</span><span>Field Capacity</span><span>Saturation</span></div>
+            <div style="position:relative;height:10px;border-radius:5px;overflow:hidden;background:linear-gradient(to right,#e05c22,#f5a623,#2d7a3a,#1a6fa8)">
+              <div id="moisturePositionMarker" style="position:absolute;top:-2px;width:4px;height:14px;background:#1e1a10;border-radius:2px;transform:translateX(-50%);transition:left 0.4s ease;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text3);display:flex;justify-content:space-between;margin-top:2px" id="moistureProfileLabels"><span id="wp-label">—</span><span id="fc-label">—</span><span id="sat-label">—</span></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Soil Advisory for <span id="soilCropName">this crop</span></div>
+          <div class="soil-advisory" id="soilAdvisory">Select a region and crop to see soil advisory.</div>
+          <div style="margin-top:16px">
+            <div style="font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Irrigation Method Suitability</div>
+            <div id="irrigMethodGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+          </div>
+          <div style="margin-top:16px">
+            <div style="font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Soil Health Indicators</div>
+            <div id="soilHealthGrid" style="display:grid;grid-template-columns:1fr;gap:6px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: CROP CALENDAR -->
+    <div id="tab-calendar" class="tab-panel" style="padding-top:16px">
+      <div class="btm">
+        <div class="panel">
+          <div class="panel-title">Crop Calendar — <span id="calCropName">Select a crop</span></div>
+          <div class="cal-phase-now" id="calPhaseNow">
+            <div class="cal-phase-title" id="calPhaseTitle">Current Phase</div>
+            <div class="cal-phase-body" id="calPhaseBody">Select a crop to see its current growing phase.</div>
+          </div>
+          <div style="font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px">Monthly Calendar</div>
+          <div class="cal-months" id="calMonthsGrid"></div>
+          <div style="font-family:var(--font-m);font-size:9px;color:var(--text3);text-align:center;margin:6px 0 10px;letter-spacing:0.04em">▲ = Current month</div>
+          <div class="cal-legend">
+            <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#d4edda;border:1px solid rgba(21,87,36,0.25)"></div>Sowing</div>
+            <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#28a745"></div>Peak growth</div>
+            <div class="cal-leg-item"><div class="cal-leg-dot" style="background:#c3e6cb;border:1px solid rgba(21,87,36,0.3)"></div>Growing</div>
+            <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--amberl);border:1px solid rgba(201,124,10,0.3)"></div>Harvest</div>
+            <div class="cal-leg-item"><div class="cal-leg-dot" style="background:var(--bg3);border:1px solid var(--border)"></div>Off-season</div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="wdb-label">Monthly Water Demand Index</div>
+            <div class="wdb-months" id="wdbMonths"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Stage-Wise Irrigation Guide</div>
+          <div id="stageGuide" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div style="margin-top:16px">
+            <div class="panel-title" style="margin-bottom:8px">Inter-Crop Windows</div>
+            <div id="interCropInfo" style="font-size:12px;color:var(--text2);line-height:1.7;background:var(--bg2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--border)">Select a crop to see inter-crop and rotation recommendations.</div>
+          </div>
+          <div style="margin-top:16px">
+            <div class="panel-title" style="margin-bottom:8px">Fertilizer Schedule</div>
+            <div id="fertSchedule" style="font-size:12px;color:var(--text2);line-height:1.7;background:var(--bg2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--border)">Select a crop to view recommended fertilization timing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ANALYSIS -->
+    <div id="tab-analysis" class="tab-panel" style="padding-top:16px">
+      <div class="btm">
+        <div class="panel">
+          <div class="panel-title">What-If Simulation</div>
+          <div class="sim-grid">
+            <button class="sim-btn" onclick="sim('add10',this)">+ 10 L water</button>
+            <button class="sim-btn" onclick="sim('add20',this)">+ 20 L water</button>
+            <button class="sim-btn" onclick="sim('rain',this)">Simulate rain</button>
+            <button class="sim-btn" onclick="sim('skip',this)">Skip cycle</button>
+            <button class="sim-btn" onclick="sim('drain',this)">Drain field</button>
+            <button class="sim-btn" onclick="sim('clear',this)" style="color:var(--text3)">Clear</button>
+          </div>
+          <div class="sim-result"><div class="sim-result-title">Result</div><div id="simText">Choose a scenario to simulate field response.</div></div>
+          <div style="margin-top:16px">
+            <div class="panel-title" style="margin-bottom:10px">Irrigation Efficiency</div>
+            <div class="eff-row">
+              <div class="eff-num" id="effNum" style="color:var(--green)">96%</div>
+              <div class="eff-track"><div class="eff-fill" id="effFill" style="width:96%;background:var(--green)"></div></div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:12px" id="effText">Irrigation is highly efficient.</div>
+            <div class="mini-grid">
+              <div class="mini-card"><div class="mini-label">Target moisture</div><div class="mini-val" id="mi0">52%</div></div>
+              <div class="mini-card"><div class="mini-label">Water loss est.</div><div class="mini-val" id="mi1" style="color:var(--red)">0 L</div></div>
+              <div class="mini-card"><div class="mini-label">Urgency</div><div class="mini-val" id="mi2">None</div></div>
+              <div class="mini-card"><div class="mini-label">Rain benefit</div><div class="mini-val" id="mi3">Low</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Water Budget (Monthly)</div>
+          <div class="chart-wrap" style="height:200px"><canvas id="budgetChart"></canvas></div>
+          <div style="margin-top:16px">
+            <div class="panel-title" style="margin-bottom:8px">Crop-Soil Compatibility</div>
+            <div id="compatGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Real-time weather: Open-Meteo API (free) · Soil data: NBSS&LUP / ICAR datasets · Crop calendar: ICAR-DARE / IMD · No API key needed · No backend</div>
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  REGION DATABASE  (lat/lon, soil type, crops)
+// ══════════════════════════════════════════════════════════════════
+const REGIONS = {
+  punjab:       {name:'Punjab',        lat:31.15,lon:75.34, soil:'alluvial-loam', crops:['wheat','rice','cotton','maize','sugarcane'],      desc:'Indo-Gangetic plains. Rich alluvial soil. Canal irrigation dominant.'},
+  haryana:      {name:'Haryana',       lat:29.06,lon:76.08, soil:'sandy-loam',    crops:['wheat','mustard','rice','bajra','sugarcane'],      desc:'Semi-arid plains. Sandy loam. Tube-well irrigation dominant.'},
+  up:           {name:'Uttar Pradesh', lat:26.85,lon:80.95, soil:'alluvial-loam', crops:['sugarcane','wheat','rice','potato','mustard'],     desc:'Largest agri state. Deep alluvial soil. Ganga-Yamuna doab.'},
+  rajasthan:    {name:'Rajasthan',     lat:27.02,lon:74.22, soil:'arid-sandy',    crops:['bajra','jowar','cotton','mustard','groundnut'],    desc:'Arid & semi-arid. Sandy soil, low water retention. Drip irrigation critical.'},
+  himachal:     {name:'Himachal Pradesh',lat:31.10,lon:77.17,soil:'mountain-loam',crops:['apple','maize','wheat','potato','rice'],          desc:'Mountainous. Terrace farming. Moderate-high rainfall.'},
+  ap:           {name:'Andhra Pradesh',lat:15.91,lon:79.74, soil:'black-red',     crops:['rice','chilli','cotton','sugarcane','tobacco'],    desc:'Coastal & Deccan. Black cotton + red soils. Krishna-Godavari delta.'},
+  telangana:    {name:'Telangana',     lat:17.12,lon:79.02, soil:'black-clay',    crops:['rice','cotton','maize','soybean','redgram'],       desc:'Deccan plateau. Deep black cotton soil (regur). Good water retention.'},
+  karnataka:    {name:'Karnataka',     lat:15.32,lon:75.72, soil:'red-laterite',  crops:['coffee','ragi','sugarcane','rice','maize'],        desc:'Diverse terrain. Red loam & laterite. Varied rainfall 600–3000mm.'},
+  tamilnadu:    {name:'Tamil Nadu',    lat:11.13,lon:78.66, soil:'alluvial-clay', crops:['rice','banana','sugarcane','coconut','cotton'],    desc:'Two monsoon seasons. Cauvery delta. Alluvial + red clay soils.'},
+  kerala:       {name:'Kerala',        lat:10.85,lon:76.27, soil:'laterite',      crops:['coconut','rubber','rice','banana','pepper'],       desc:'High-rainfall zone. Laterite hills & coastal alluvial. 2000–3500mm rain.'},
+  gujarat:      {name:'Gujarat',       lat:22.26,lon:71.19, soil:'black-clay',    crops:['cotton','groundnut','wheat','bajra','sugarcane'],  desc:'Semi-arid. Black cotton soil in Saurashtra, sandy in north.'},
+  maharashtra:  {name:'Maharashtra',   lat:19.75,lon:75.71, soil:'black-clay',    crops:['sugarcane','cotton','soybean','onion','jowar'],    desc:'Deccan plateau. Deep black soil (regur). Highest sugarcane production.'},
+  goa:          {name:'Goa',           lat:15.30,lon:74.12, soil:'laterite',      crops:['rice','coconut','cashew','mango','pepper'],        desc:'Coastal state. Laterite & alluvial. Extremely high rainfall.'},
+  wb:           {name:'West Bengal',   lat:22.99,lon:87.85, soil:'alluvial-clay', crops:['rice','jute','tea','potato','mustard'],            desc:'Ganges-Brahmaputra delta. Very fertile alluvial. 1200–2500mm rain.'},
+  odisha:       {name:'Odisha',        lat:20.94,lon:85.10, soil:'red-laterite',  crops:['rice','groundnut','mustard','turmeric','jute'],    desc:'Eastern coastal. Red & yellow soils. Mahanadi basin.'},
+  bihar:        {name:'Bihar',         lat:25.09,lon:85.31, soil:'alluvial-loam', crops:['rice','wheat','maize','lichi','sugarcane'],        desc:'Gangetic plains. Fertile alluvial soil.'},
+  assam:        {name:'Assam',         lat:26.20,lon:92.94, soil:'alluvial-loam', crops:['tea','rice','jute','sugarcane','mustard'],         desc:'Brahmaputra valley. Very fertile. Largest tea-growing region.'},
+  mp:           {name:'Madhya Pradesh',lat:22.97,lon:78.66, soil:'black-clay',    crops:['soybean','wheat','pulses','cotton','maize'],       desc:'Central India. Black cotton soil dominant. 700–1300mm rain.'},
+  chhattisgarh: {name:'Chhattisgarh', lat:21.28,lon:81.87, soil:'red-laterite',  crops:['rice','maize','pulses','groundnut','mustard'],     desc:'Rice bowl of India. Red & yellow soil. Heavy monsoon.'}
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  DETAILED SOIL DATABASE  (NBSS&LUP / ICAR data)
+// ══════════════════════════════════════════════════════════════════
+const SOIL_DB = {
+  'alluvial-loam': {
+    label:'Alluvial Loam', ph:'6.5–7.8', phDesc:'Neutral to slightly alkaline',
+    whc:'180–220', drainClass:'Well drained', drainDesc:'Good percolation',
+    om:'0.5–1.2%', omDesc:'Low to medium', nitrogen:'Medium', nDesc:'NPK responsive',
+    sand:40, silt:35, clay:25,
+    wiltPoint:12, fieldCap:32, saturation:48,
+    low:30, safeMin:31, safeMax:70, high:85, excess:95, drain:1.0,
+    advisory:'Alluvial loam is the most productive soil in India. It has balanced sand-silt-clay composition allowing good water movement. Add organic matter annually to improve moisture retention. Avoid waterlogging — good drainage channels are essential. Ideal for wheat, rice, sugarcane.',
+    irrigMethods:[{m:'Flood/furrow',r:'Good'},{m:'Drip',r:'Excellent'},{m:'Sprinkler',r:'Good'},{m:'Canal',r:'Suitable'}],
+    health:[{i:'Fertility',v:78,c:'var(--green)'},{i:'Drainage',v:72,c:'var(--blue)'},{i:'Structure',v:70,c:'var(--soil)'},{i:'OM content',v:45,c:'var(--amber)'}]
+  },
+  'sandy-loam': {
+    label:'Sandy Loam', ph:'6.0–7.5', phDesc:'Slightly acidic to neutral',
+    whc:'120–160', drainClass:'Rapid', drainDesc:'Very fast percolation',
+    om:'0.3–0.8%', omDesc:'Low', nitrogen:'Low-Medium', nDesc:'Leaches quickly',
+    sand:60, silt:25, clay:15,
+    wiltPoint:8, fieldCap:22, saturation:38,
+    low:20, safeMin:21, safeMax:58, high:72, excess:85, drain:1.4,
+    advisory:'Sandy loam drains rapidly — irrigation frequency must be higher. Apply water in small, frequent doses rather than large amounts. Add compost or green manure to improve water holding capacity. Drip irrigation is strongly recommended to reduce water waste. Mulching the soil surface reduces evaporation by 30–40%.',
+    irrigMethods:[{m:'Drip',r:'Highly recommended'},{m:'Sprinkler',r:'Good'},{m:'Flood',r:'Inefficient'},{m:'Canal',r:'High losses'}],
+    health:[{i:'Fertility',v:38,c:'var(--amber)'},{i:'Drainage',v:92,c:'var(--green)'},{i:'Structure',v:55,c:'var(--soil)'},{i:'OM content',v:28,c:'var(--red)'}]
+  },
+  'arid-sandy': {
+    label:'Arid Sandy Soil', ph:'7.5–9.0', phDesc:'Alkaline — may need amendment',
+    whc:'80–110', drainClass:'Excessive', drainDesc:'Water lost very quickly',
+    om:'0.1–0.4%', omDesc:'Very low', nitrogen:'Very Low', nDesc:'Requires heavy dosing',
+    sand:80, silt:12, clay:8,
+    wiltPoint:5, fieldCap:14, saturation:28,
+    low:20, safeMin:21, safeMax:52, high:65, excess:78, drain:1.6,
+    advisory:'Arid sandy soil of Rajasthan has very low water retention and high pH. Gypsum application is needed to reduce alkalinity. Drip irrigation is mandatory — flood irrigation causes up to 70% water loss. Add bio-compost and Jeevamrit to build organic matter. Windbreaks reduce evaporation. Rainwater harvesting structures like johad and kund are critical.',
+    irrigMethods:[{m:'Drip',r:'Mandatory'},{m:'Sprinkler',r:'Acceptable'},{m:'Flood',r:'Wasteful'},{m:'Canal',r:'Not suitable'}],
+    health:[{i:'Fertility',v:18,c:'var(--red)'},{i:'Drainage',v:96,c:'var(--green)'},{i:'Structure',v:30,c:'var(--amber)'},{i:'OM content',v:12,c:'var(--red)'}]
+  },
+  'black-clay': {
+    label:'Black Cotton Soil (Regur)', ph:'7.5–8.5', phDesc:'Alkaline, calcium-rich',
+    whc:'240–300', drainClass:'Slow', drainDesc:'Waterlogging risk in monsoon',
+    om:'0.5–1.5%', omDesc:'Medium', nitrogen:'Medium', nDesc:'Good phosphorus fixation',
+    sand:20, silt:28, clay:52,
+    wiltPoint:22, fieldCap:45, saturation:58,
+    low:35, safeMin:36, safeMax:75, high:84, excess:92, drain:0.65,
+    advisory:'Black cotton soil (Regur) has very high clay content and swells when wet, shrinks when dry forming deep cracks. Water retention is excellent but waterlogging is a major risk. Avoid over-irrigation — soil becomes sticky and anaerobic quickly. Raised bed cultivation reduces waterlogging. Deep Vertisol — tractor access is difficult when wet. Potassium is naturally high; focus on nitrogen and micronutrients.',
+    irrigMethods:[{m:'Drip',r:'Highly recommended'},{m:'Raised beds',r:'Best for drainage'},{m:'Flood',r:'Risk of waterlogging'},{m:'Sprinkler',r:'Moderate'}],
+    health:[{i:'Fertility',v:65,c:'var(--green)'},{i:'Drainage',v:30,c:'var(--red)'},{i:'Structure',v:48,c:'var(--amber)'},{i:'OM content',v:58,c:'var(--green)'}]
+  },
+  'black-red': {
+    label:'Black & Red Mixed Soil', ph:'6.5–8.0', phDesc:'Neutral to mildly alkaline',
+    whc:'160–210', drainClass:'Moderate', drainDesc:'Variable by location',
+    om:'0.4–1.0%', omDesc:'Low to Medium', nitrogen:'Low-Medium', nDesc:'Variable across field',
+    sand:30, silt:30, clay:40,
+    wiltPoint:16, fieldCap:36, saturation:50,
+    low:32, safeMin:33, safeMax:72, high:83, excess:92, drain:0.85,
+    advisory:'Mixed black and red soils occur across coastal Andhra Pradesh. Red soils are in upland areas with good drainage; black soils in lowland basins with high water retention. Manage irrigation by zone — upland areas need more frequent irrigation while lowland areas risk waterlogging. Soil testing is essential before fertilisation as variation within the same field is common.',
+    irrigMethods:[{m:'Drip',r:'Recommended for uplands'},{m:'Canal',r:'Suitable for lowlands'},{m:'Sprinkler',r:'Good overall'},{m:'Flood',r:'Lowlands only'}],
+    health:[{i:'Fertility',v:55,c:'var(--amber)'},{i:'Drainage',v:58,c:'var(--amber)'},{i:'Structure',v:60,c:'var(--soil)'},{i:'OM content',v:42,c:'var(--amber)'}]
+  },
+  'red-laterite': {
+    label:'Red Laterite Soil', ph:'5.0–6.5', phDesc:'Acidic — lime needed',
+    whc:'130–170', drainClass:'Good', drainDesc:'Moderate to rapid',
+    om:'0.3–0.9%', omDesc:'Low', nitrogen:'Low', nDesc:'Iron/aluminium dominant',
+    sand:45, silt:25, clay:30,
+    wiltPoint:14, fieldCap:28, saturation:42,
+    low:28, safeMin:29, safeMax:65, high:78, excess:90, drain:1.1,
+    advisory:'Red laterite soil is acidic due to high iron and aluminium oxide content. Lime application is essential before cultivation (2–3 t/ha) to raise pH. Organic matter content is low — add compost and green manure crops like dhaincha. Phosphorus is fixed by iron oxides making it unavailable — use phosphate-solubilising bacteria. Soil erosion on slopes is a serious concern — contour bunding is recommended.',
+    irrigMethods:[{m:'Drip',r:'Best for water efficiency'},{m:'Sprinkler',r:'Good on slopes'},{m:'Contour bunds',r:'Erosion control'},{m:'Flood',r:'Causes erosion'}],
+    health:[{i:'Fertility',v:32,c:'var(--red)'},{i:'Drainage',v:68,c:'var(--green)'},{i:'Structure',v:55,c:'var(--soil)'},{i:'OM content',v:30,c:'var(--red)'}]
+  },
+  'laterite': {
+    label:'Laterite / Lateritic Soil', ph:'4.5–6.0', phDesc:'Acidic to strongly acidic',
+    whc:'150–200', drainClass:'Good to rapid', drainDesc:'Well drained on slopes',
+    om:'0.5–2.0%', omDesc:'Medium (under forest)', nitrogen:'Low-Medium', nDesc:'Leaches in high rainfall',
+    sand:35, silt:30, clay:35,
+    wiltPoint:18, fieldCap:34, saturation:50,
+    low:30, safeMin:31, safeMax:68, high:80, excess:90, drain:0.9,
+    advisory:'Laterite soils of Kerala and coastal areas are formed by intense weathering under tropical rainfall. Rich in iron and aluminium. Soil is acidic — coconut, rubber, and pepper thrive well. Very high rainfall areas require proper drainage to avoid surface run-off and leaching. Mulching with coconut fronds and dry leaves is a traditional and effective practice. Micro-nutrient deficiency (zinc, boron) is common.',
+    irrigMethods:[{m:'Drip',r:'Ideal for coconut/rubber'},{m:'Basin',r:'Traditional, effective'},{m:'Sprinkler',r:'Good for arecanut'},{m:'Flood',r:'Not recommended'}],
+    health:[{i:'Fertility',v:48,c:'var(--amber)'},{i:'Drainage',v:74,c:'var(--green)'},{i:'Structure',v:62,c:'var(--soil)'},{i:'OM content',v:55,c:'var(--green)'}]
+  },
+  'alluvial-clay': {
+    label:'Alluvial Clay', ph:'6.0–7.5', phDesc:'Neutral to slightly alkaline',
+    whc:'210–260', drainClass:'Imperfect', drainDesc:'Seasonal waterlogging',
+    om:'0.8–1.8%', omDesc:'Medium to High', nitrogen:'Medium-High', nDesc:'High fertility',
+    sand:22, silt:38, clay:40,
+    wiltPoint:20, fieldCap:42, saturation:56,
+    low:34, safeMin:35, safeMax:74, high:84, excess:92, drain:0.72,
+    advisory:'Alluvial clay soils in Bengal and Bihar deltas are highly fertile with medium-high organic matter. High clay content means waterlogging during monsoon is common — drainage canals must be maintained. Puddling for rice cultivation is natural in this soil. After rice harvest, deep tillage helps break the hardpan layer. Excellent for Boro rice, jute, and mustard in rotation.',
+    irrigMethods:[{m:'Canal/flood',r:'Suitable for rice'},{m:'Drip',r:'Good for vegetables'},{m:'Drainage canals',r:'Essential in monsoon'},{m:'Sprinkler',r:'Good for rabi crops'}],
+    health:[{i:'Fertility',v:72,c:'var(--green)'},{i:'Drainage',v:38,c:'var(--amber)'},{i:'Structure',v:52,c:'var(--soil)'},{i:'OM content',v:65,c:'var(--green)'}]
+  },
+  'mountain-loam': {
+    label:'Mountain Forest Loam', ph:'5.5–7.0', phDesc:'Slightly acidic to neutral',
+    whc:'170–220', drainClass:'Good', drainDesc:'Natural slope drainage',
+    om:'2.0–5.0%', omDesc:'High (forest litter)', nitrogen:'Medium-High', nDesc:'Good natural fertility',
+    sand:35, silt:40, clay:25,
+    wiltPoint:14, fieldCap:33, saturation:46,
+    low:28, safeMin:29, safeMax:66, high:80, excess:90, drain:1.05,
+    advisory:'Mountain loam soils of Himachal Pradesh are naturally rich in organic matter due to forest litter decomposition. Good structure and water retention with natural slope drainage. Soil erosion on slopes is a serious concern — contour cultivation and check dams are important. Apple orchards benefit from mulching to retain soil moisture between irrigation. Frost protection strategies are needed for winter crops.',
+    irrigMethods:[{m:'Drip',r:'Ideal for orchards'},{m:'Sprinkler',r:'Good for vegetables'},{m:'Contour bunds',r:'Slope management'},{m:'Flood',r:'Not suitable on slopes'}],
+    health:[{i:'Fertility',v:68,c:'var(--green)'},{i:'Drainage',v:70,c:'var(--green)'},{i:'Structure',v:75,c:'var(--green)'},{i:'OM content',v:80,c:'var(--green)'}]
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  CROP CALENDAR DATABASE  (ICAR-DARE / IMD)
+//  months: 0=Jan ... 11=Dec
+//  phases: 'off','sow','grow','peak','harvest','rest'
+//  waterDemand: 0–10 per month
+// ══════════════════════════════════════════════════════════════════
+const CROP_CAL = {
+  wheat:     {months:['rest','rest','harvest','harvest','off','off','off','off','off','sow','grow','peak'],  waterDemand:[2,2,3,0,0,0,0,0,0,4,6,8],  stages:[{s:'Germination',m:'Oct–Nov',wi:'Light — 40–50mm total',n:'Water lightly. Overwatering causes damping-off.'},{s:'Tillering',m:'Nov–Dec',wi:'Moderate — 60–80mm',n:'Critical stage. Ensure adequate moisture for tiller formation.'},{s:'Jointing / Stem elongation',m:'Dec–Jan',wi:'High — 80–100mm',n:'Peak water demand. Do not let field dry below 40%.'},{s:'Heading / Grain fill',m:'Jan–Feb',wi:'High — 80–100mm',n:'Moisture stress at heading reduces yield by 40%.'},{s:'Maturity',m:'Feb–Mar',wi:'None',n:'Stop irrigation 2 weeks before harvest to harden grain.'}], interCrop:'Wheat + mustard intercropping in Rabi. Rotate with rice or maize in Kharif. Legume rotation (chickpea/lentil) improves soil nitrogen.',  fert:'Basal: DAP 50kg/ha at sowing. Top dress: Urea 65kg/ha at tillering. Zinc sulphate 25kg/ha if deficient.'},
+  rice:      {months:['off','off','off','off','sow','sow','grow','peak','peak','harvest','off','off'],       waterDemand:[0,0,0,0,3,5,8,10,9,4,0,0],  stages:[{s:'Nursery',m:'May–Jun',wi:'Moderate — nursery flooding',n:'Maintain 2–3cm water in nursery. Drain before transplanting.'},{s:'Transplanting',m:'Jun–Jul',wi:'Heavy — puddling required',n:'Puddle field 3–4 days before transplanting. Maintain 5cm standing water.'},{s:'Tillering',m:'Jul–Aug',wi:'High — 5cm standing water',n:'Most critical stage. Water stress reduces tillers by 50%.'},{s:'Panicle initiation',m:'Aug–Sep',wi:'Very High',n:'Never allow field to dry during panicle initiation.'},{s:'Maturity / Harvest',m:'Oct',wi:'Drain 2 weeks before harvest',n:'Drain field 10–14 days before harvest for proper grain maturity.'}], interCrop:'Rice-wheat rotation is the dominant system in Punjab/UP. Fish farming in rice fields (rice-fish integration) is practiced in Bengal. Azolla as green manure between crops.',  fert:'Basal: DAP 100kg/ha. Top dress: Urea in 3 splits — at transplant, tillering, panicle initiation. Zinc sulphate essential in Vertisols.'},
+  cotton:    {months:['off','off','off','sow','sow','grow','peak','peak','harvest','harvest','off','off'],   waterDemand:[0,0,0,3,5,7,9,9,6,3,0,0],  stages:[{s:'Germination',m:'Apr–May',wi:'Light irrigation',n:'Avoid waterlogging at germination. Sandy ridges improve drainage.'},{s:'Vegetative growth',m:'May–Jun',wi:'Moderate — 50–60mm/month',n:'Ensure consistent moisture. Mulch between rows to conserve soil moisture.'},{s:'Squaring / Flowering',m:'Jul–Aug',wi:'High — critical stage',n:'Water stress at flowering causes boll shedding. Irrigate every 10–12 days.'},{s:'Boll development',m:'Aug–Sep',wi:'High',n:'Moisture stress reduces boll weight and fibre quality.'},{s:'Boll opening / Harvest',m:'Sep–Oct',wi:'Reduce gradually',n:'Reduce irrigation 4 weeks before harvest to aid boll opening.'}], interCrop:'Cotton + green gram / cowpea as intercrops. Sorghum as windbreak. Rotate with wheat in Rabi or chickpea.',  fert:'Basal: FYM 10t/ha. DAP 50kg/ha. Top dress: Urea 50kg/ha at squaring, potash 50kg/ha at flowering.'},
+  sugarcane: {months:['peak','peak','grow','grow','sow','sow','grow','peak','peak','peak','harvest','harvest'],waterDemand:[6,6,7,7,8,9,9,10,10,9,5,4], stages:[{s:'Germination (Ratoon / Plant)',m:'Apr–May',wi:'Moderate — 50–60mm/month',n:'Pre-sowing irrigation essential. Maintain consistent moisture through germination.'},{s:'Tillering',m:'Jun–Jul',wi:'High — 80–100mm/month',n:'Critical stage for yield. Waterlogging must be avoided in clay soils.'},{s:'Grand growth phase',m:'Aug–Nov',wi:'Very High — peak demand',n:'Maximum water use period. Drip irrigation reduces water by 30–40% vs flood.'},{s:'Maturity / Harvest',m:'Nov–Feb',wi:'Reduce by 30%',n:'Reducing water aids sucrose accumulation. Avoid pre-harvest irrigation.'}], interCrop:'Sugarcane + soybean, onion, or potato as intercrops in early stages. Trap crops for early shoot borer management.',  fert:'FYM 40t/ha at sowing. Nitrogen 250kg/ha in 3 splits. Potash 120kg/ha. Trash mulching reduces fertiliser need.'},
+  maize:     {months:['off','off','harvest','off','off','sow','grow','peak','harvest','off','off','off'],    waterDemand:[0,0,2,0,0,5,7,9,4,0,0,0],  stages:[{s:'Germination',m:'Jun',wi:'Light',n:'Adequate moisture for germination but no waterlogging.'},{s:'Vegetative',m:'Jun–Jul',wi:'Moderate',n:'Critical period: V6 stage onward. Avoid drought stress.'},{s:'Tasseling / Silking',m:'Jul–Aug',wi:'Very High — most critical',n:'Single most critical stage. Water stress during silking causes 40–80% yield loss.'},{s:'Grain fill',m:'Aug–Sep',wi:'High',n:'Maintain moisture through grain fill for kernel weight.'},{s:'Maturity',m:'Sep',wi:'Low',n:'Reduce irrigation as plant senesces.'}], interCrop:'Maize + pulses (cowpea, soybean) intercropping. Maize + potato in hills. Rotate with wheat in Rabi.',  fert:'Basal: DAP 100kg/ha + MOP 60kg/ha. Top dress: Urea 65kg/ha at knee-high, repeat at tasseling.'},
+  bajra:     {months:['off','off','off','off','off','sow','grow','peak','harvest','off','off','off'],        waterDemand:[0,0,0,0,0,4,6,7,3,0,0,0],  stages:[{s:'Germination',m:'Jun',wi:'Light — 20–25mm',n:'Drought-tolerant at germination but moisture helps establishment.'},{s:'Vegetative',m:'Jun–Jul',wi:'Low to moderate',n:'Most drought-tolerant cereal. Minimal irrigation needed in normal years.'},{s:'Panicle emergence',m:'Jul–Aug',wi:'Moderate — do not stress',n:'Only critical irrigation period. Yield loss from drought at this stage.'},{s:'Grain fill',m:'Aug',wi:'Low',n:'Low irrigation requirement. Rainfed usually sufficient.'}], interCrop:'Bajra + pulses (moth bean, cowpea) in Rajasthan. Bajra + cluster bean traditional intercrop.',  fert:'Low input crop. FYM 5t/ha if available. DAP 25kg/ha only if soil test indicates deficiency.'},
+  mustard:   {months:['off','off','harvest','off','off','off','off','off','off','sow','grow','peak'],       waterDemand:[0,0,2,0,0,0,0,0,0,4,6,5],  stages:[{s:'Germination',m:'Oct',wi:'Pre-sowing irrigation only',n:'One pre-sowing irrigation. Do not irrigate post-germination for 2 weeks.'},{s:'Vegetative',m:'Oct–Nov',wi:'Light — 1 irrigation',n:'Drought-tolerant crop. 1–2 irrigations through season is usually enough.'},{s:'Flowering',m:'Nov–Dec',wi:'Critical — 1 irrigation at flowering',n:'Single most important irrigation. Water stress at flowering sharply reduces yield.'},{s:'Pod filling',m:'Dec–Jan',wi:'1 irrigation at pod fill',n:'Light irrigation at pod filling improves seed weight and oil content.'}], interCrop:'Mustard + wheat intercropping (6:2 row ratio) in North India. Mustard + chickpea. Rotate with rice in Kharif.',  fert:'DAP 50kg/ha at sowing. Sulphur 30–40kg/ha is critical for oil quality. Boron 0.5kg/ha as foliar spray.'},
+  groundnut: {months:['off','off','off','off','sow','grow','peak','peak','harvest','off','off','off'],      waterDemand:[0,0,0,0,4,6,8,8,3,0,0,0],  stages:[{s:'Germination',m:'May',wi:'Moderate pre-sowing',n:'2–3 irrigations before sowing for good seed-soil contact.'},{s:'Vegetative growth',m:'Jun',wi:'Moderate',n:'Avoid waterlogging — diseases increase dramatically.'},{s:'Flowering / Pegging',m:'Jun–Jul',wi:'High — most critical',n:'Water stress during pegging reduces pod number by 40%. Never let field dry.'},{s:'Pod development',m:'Jul–Aug',wi:'High',n:'Maintain moisture for pod fill. Calcium at this stage is important.'},{s:'Maturity',m:'Aug–Sep',wi:'Reduce to dry soil',n:'Reduce irrigation 2–3 weeks before harvest for easier digging.'}], interCrop:'Groundnut + bajra is a classic drought-zone intercrop in Gujarat/Rajasthan. Groundnut + maize. Rotate with sorghum.',  fert:'Gypsum 250–500kg/ha at pegging stage — critical for pod fill. FYM 5t/ha. Low nitrogen (Rhizobium inoculant).'},
+  soybean:   {months:['off','off','off','off','off','sow','grow','peak','harvest','off','off','off'],       waterDemand:[0,0,0,0,0,4,7,9,3,0,0,0],  stages:[{s:'Germination',m:'Jun',wi:'Moderate',n:'Good soil moisture for uniform germination. Avoid crust formation.'},{s:'Vegetative stages',m:'Jun–Jul',wi:'Moderate',n:'Relatively drought-tolerant in vegetative phase.'},{s:'Flowering',m:'Jul–Aug',wi:'High — critical',n:'Water stress at flowering causes flower drop. Critical irrigation period.'},{s:'Pod filling',m:'Aug',wi:'Very High',n:'Most critical period. Soil moisture stress causes seed shrivelling.'},{s:'Maturity',m:'Sep',wi:'None',n:'Stop irrigation at maturity. Excess moisture causes seed discolouration.'}], interCrop:'Soybean + maize or sorghum intercrop. Soybean as green manure before wheat. Rotate with cotton in Vertisols.',  fert:'Rhizobium inoculant is essential — saves 80% nitrogen cost. DAP 50kg/ha basal. MOP 40kg/ha. Sulphur 20kg/ha.'},
+  potato:    {months:['harvest','off','off','off','off','off','off','off','off','off','sow','grow'],        waterDemand:[4,0,0,0,0,0,0,0,0,0,5,7],  stages:[{s:'Planting / Sprout establishment',m:'Oct–Nov',wi:'Moderate',n:'Maintain even soil moisture. Irregular watering causes hollow heart and cracking.'},{s:'Vegetative growth',m:'Nov–Dec',wi:'High',n:'Frequent irrigation needed — every 7–10 days. Furrow or drip irrigation preferred.'},{s:'Tuber initiation',m:'Dec',wi:'Very High — most critical',n:'Most critical stage. Moisture stress now causes significant tuber yield reduction.'},{s:'Tuber bulking',m:'Dec–Jan',wi:'High',n:'Maintain consistent moisture for uniform tuber size.'},{s:'Maturation',m:'Jan–Feb',wi:'Reduce to dry off',n:'Reduce irrigation 2–3 weeks before harvest for skin set.'}], interCrop:'Potato + maize or mustard intercropping. Potato early harvest followed by summer maize. Rotate with rice-wheat.',  fert:'FYM 20–25t/ha. DAP 120kg/ha + MOP 100kg/ha at planting. Top dress Urea 50kg/ha at earthing up.'},
+  banana:    {months:['peak','peak','peak','grow','grow','grow','peak','peak','peak','grow','grow','peak'], waterDemand:[7,7,8,8,9,9,10,10,9,8,7,7], stages:[{s:'Planting / Establishment',m:'Year-round (optimal Apr–Jun)',wi:'Regular every 3–4 days',n:'Young plants need consistent moisture. Mulch helps retain moisture.'},{s:'Vegetative growth',m:'Months 2–8',wi:'High — 25–30mm every 2–3 days',n:'Fast-growing stage. Drip irrigation is most efficient.'},{s:'Bunch emergence',m:'Month 9–10',wi:'Very High — critical',n:'Water stress at shooting causes bunch malformation and yield loss of 30–50%.'},{s:'Fruit fill / Harvest',m:'Month 11–13',wi:'High',n:'Maintain moisture through fill for optimal bunch weight.'}], interCrop:'Banana + ginger, turmeric, or elephant foot yam as intercrops. Multi-storeyed gardening in Kerala.',  fert:'FYM 25kg/plant/year. Urea 300g + MOP 300g per plant in 4 splits. Micronutrient spray at bunch emergence.'},
+  coconut:   {months:['peak','peak','peak','peak','peak','peak','peak','peak','peak','peak','peak','peak'], waterDemand:[6,6,7,8,9,9,9,8,8,7,6,6],  stages:[{s:'Young palms (0–5 years)',m:'Year-round',wi:'25–30 litres/palm/day in summer',n:'Basin irrigation preferred. Mulch basin with coconut fronds.'},{s:'Bearing palms',m:'Year-round',wi:'40–45 litres/palm/day in dry season',n:'Summer irrigation (Dec–May) is most critical for yield. Drip at 30L/palm/day.'},{s:'Flowering / Nut set',m:'Year-round',wi:'Consistent moisture',n:'Water stress causes button shedding. Irregular irrigation reduces nut/bunch.'},{s:'Nut development',m:'Year-round, 12-month cycle',wi:'Moderate and consistent',n:'Drip irrigation increases yield by 30% over basin method in coastal areas.'}], interCrop:'Coconut + banana + pineapple + ginger traditional multi-storeyed system in Kerala.',  fert:'FYM 50kg/palm/year. Urea 1.3kg + MOP 2.0kg + SSP 2.0kg per palm in 2 splits.'},
+  coffee:    {months:['harvest','harvest','off','grow','grow','peak','peak','peak','grow','grow','harvest','harvest'],waterDemand:[3,3,0,5,7,8,8,8,7,6,4,3], stages:[{s:'Blossom showers',m:'Feb–Mar',wi:'2–3 blossom showers critical',n:'After dry period, 50–80mm rain or irrigation triggers flowering. Timing is critical.'},{s:'Fruit development',m:'Apr–Sep',wi:'Moderate and regular',n:'Coffee berries develop over 8–9 months. Consistent moisture prevents berry borer.'},{s:'Ripening',m:'Oct–Dec',wi:'Reduce from Nov',n:'Reducing water aids cherry ripening. Harvest when 80% cherries are red.'},{s:'Post-harvest rest',m:'Dec–Feb',wi:'Minimal',n:'Rest period needed between harvest and next blossom shower season.'}], interCrop:'Coffee + pepper on same column. Shade trees (Grevillea, silver oak) reduce water demand by 20%. Multi-storeyed plantation.',  fert:'Urea 150g + MOP 150g + SSP 100g per plant/year. Zinc sulphate + borax foliar spray before blossom showers.'},
+  tea:       {months:['grow','grow','peak','peak','peak','peak','peak','peak','grow','grow','grow','grow'],  waterDemand:[5,5,7,8,9,9,9,8,7,6,5,5],  stages:[{s:'Winter dormancy / Pruning',m:'Dec–Jan',wi:'Minimal',n:'Pruning period. Light irrigation only to prevent complete desiccation.'},{s:'New flush emergence',m:'Feb–Apr',wi:'Moderate',n:'First flush — highest quality. Moisture essential for tender leaf development.'},{s:'Main plucking season',m:'May–Sep',wi:'High — consistent',n:'Plucking every 7–10 days. Moisture stress reduces flush development.'},{s:'Post-monsoon growth',m:'Oct–Nov',wi:'Moderate',n:'Second quality flush. Maintain consistent irrigation in dry years.'}], interCrop:'Tea + shade trees (Albizia, Derris) is traditional. Silver oak as windbreak. No intercrops within tea rows.',  fert:'Urea 250kg/ha in 4 equal splits through growing season. SSP 250kg/ha annually. MOP 125kg/ha.'},
+  jute:      {months:['off','off','off','sow','grow','peak','peak','harvest','off','off','off','off'],      waterDemand:[0,0,0,4,7,9,9,4,0,0,0,0],  stages:[{s:'Germination',m:'Mar–Apr',wi:'Light pre-sowing irrigation',n:'Water stress at germination causes poor stand. Ensure good soil moisture.'},{s:'Rapid vegetative growth',m:'May–Jul',wi:'High — needs consistent moisture',n:'High water demand during elongation. Requires 500–600mm over growing period.'},{s:'Fibre maturation',m:'Jul–Aug',wi:'Moderate',n:'Reduce slightly as plant approaches harvest maturity.'},{s:'Retting',m:'Aug–Sep',wi:'Water submergence required',n:'Cut jute bundles submerged in ponds or streams for 10–14 days for retting.'}], interCrop:'Jute + arhar (pigeon pea) intercrop. Jute + sesame. Jute as border crop.',  fert:'FYM 5t/ha. Urea 60kg/ha in 2 splits. DAP 40kg/ha basal.'},
+  apple:     {months:['rest','rest','rest','grow','grow','peak','peak','peak','grow','harvest','harvest','rest'],waterDemand:[0,0,0,3,5,7,8,8,7,5,3,0], stages:[{s:'Dormancy / Pruning',m:'Dec–Mar',wi:'None',n:'Chilling requirement must be met (>1000 hours <7°C) for proper flowering.'},{s:'Flowering',m:'Apr–May',wi:'Moderate — critical',n:'Frost protection irrigation may be needed during late flowering. Avoid waterlogging.'},{s:'Fruit development',m:'May–Aug',wi:'Regular irrigation',n:'Drip irrigation or basin irrigation every 10–12 days. Mulching essential.'},{s:'Fruit maturation',m:'Aug–Oct',wi:'Reduce gradually',n:'Reducing water aids colour development and sugar accumulation in fruit.'},{s:'Post-harvest',m:'Oct–Nov',wi:'Light',n:'Light post-harvest irrigation improves next season bud development.'}], interCrop:'Apple + walnut in Himachal. Intercropping vegetables in young orchards. Bee keeping for pollination.',  fert:'FYM 60–80kg/tree. Urea 1.5–2.0kg + MOP 1.5kg + SSP 2.5kg per tree/year in 3 splits.'},
+  rubber:    {months:['grow','tapping','tapping','peak','peak','peak','grow','grow','peak','peak','tapping','grow'],waterDemand:[5,4,5,7,8,8,7,7,8,7,5,5], stages:[{s:'Immature phase (0–7 years)',m:'Year-round',wi:'30–40mm/week in dry season',n:'Young trees need consistent moisture. Basin irrigation. No flooding.'},{s:'Early bearing',m:'Year 7–10',wi:'Moderate',n:'Opening tapping panel at 50cm girth. Ensure adequate moisture for latex.'},{s:'Full bearing',m:'Year 10+',wi:'Moderate, consistent',n:'Tapping every other day. Yield increases with drip irrigation by 15–20%.'},{s:'Bark renewal',m:'Post tapping cycle',wi:'Reduced',n:'Allow rest periods for bark regeneration. Reduce tapping frequency.'}], interCrop:'Rubber + banana + pepper traditional intercrop in Kerala. Cover crops (Mucuna, Pueraria) during immature period.',  fert:'Urea 200g + MOP 200g + Rock phosphate 250g per tree/year. Split into 2 applications.'},
+  chilli:    {months:['harvest','off','off','off','sow','grow','peak','peak','harvest','harvest','off','off'],waterDemand:[3,0,0,0,4,6,8,8,6,3,0,0],  stages:[{s:'Nursery',m:'Apr–May',wi:'Light and regular',n:'Maintain moisture in nursery. Avoid overwatering — damping-off common.'},{s:'Transplanting',m:'May–Jun',wi:'Immediate irrigation',n:'Transplant shock — water immediately after transplanting and daily for one week.'},{s:'Vegetative growth',m:'Jun–Jul',wi:'Moderate',n:'Every 8–10 days. Mulching reduces frequency.'},{s:'Flowering / Fruit set',m:'Jul–Aug',wi:'High — most critical',n:'Moisture stress at flowering causes flower drop. Irrigate every 6–8 days.'},{s:'Fruit development / Harvest',m:'Aug–Oct',wi:'High',n:'Maintain moisture for uniform fruit development and colour.'}], interCrop:'Chilli + maize as windbreak intercrop. Chilli + onion. Rotate with legumes.',  fert:'FYM 20t/ha. DAP 75kg/ha + MOP 50kg/ha basal. Urea 50kg/ha in 2 top dressings. Boron + Zinc foliar spray.'},
+  pulses:    {months:['harvest','off','off','off','off','sow','grow','harvest','off','sow','grow','harvest'], waterDemand:[1,0,0,0,0,3,5,2,0,3,5,2],  stages:[{s:'Germination',m:'Jun / Oct',wi:'Light pre-sowing',n:'Pre-sowing irrigation only. Excess moisture causes poor germination.'},{s:'Vegetative growth',m:'Jun–Jul / Oct–Nov',wi:'Low to moderate',n:'Relatively drought-tolerant. 1 irrigation at branching stage if rain fails.'},{s:'Flowering',m:'Jul–Aug / Nov–Dec',wi:'Critical irrigation',n:'Single most important irrigation. Prevent moisture stress during flowering.'},{s:'Pod fill',m:'Aug / Dec',wi:'1 irrigation',n:'Light irrigation improves pod fill. Stop before harvest.'}], interCrop:'Pulses as nitrogen-fixing intercrop with cereals and millets. Pulse rotation is essential for soil health.',  fert:'Minimal fertiliser — Rhizobium inoculant is key. Single basal dose of DAP 25kg/ha only.'},
+  turmeric:  {months:['off','off','off','off','sow','grow','peak','peak','peak','grow','harvest','off'],    waterDemand:[0,0,0,0,5,7,8,8,8,6,3,0],  stages:[{s:'Planting',m:'Apr–May',wi:'Pre-planting irrigation essential',n:'2–3 irrigations before planting. Ensure loose moist soil.'},{s:'Vegetative establishment',m:'May–Jul',wi:'High and regular',n:'Irrigate every 7–10 days. Mulch heavily with paddy straw or banana pseudostem.'},{s:'Rhizome development',m:'Jul–Oct',wi:'High — most critical',n:'Rhizome size depends directly on consistent moisture. Never allow field to dry.'},{s:'Maturation',m:'Oct–Nov',wi:'Reduce gradually',n:'Reduce irrigation from November. Allow foliage to senesce naturally before harvest.'}], interCrop:'Turmeric + coconut / areca nut intercrop in Karnataka/Odisha. Turmeric + ginger traditional intercrop.',  fert:'FYM 30t/ha. Urea 120kg/ha + SSP 50kg/ha + MOP 120kg/ha in 3 splits.'},
+  lichi:     {months:['grow','grow','harvest','harvest','off','off','off','off','off','off','grow','grow'],  waterDemand:[4,5,3,2,0,0,0,0,0,0,3,4],  stages:[{s:'Flower bud induction',m:'Nov–Jan',wi:'Mild water stress required',n:'Intentional water stress for 4–6 weeks induces flowering. Do not irrigate.'},{s:'Flowering',m:'Feb–Mar',wi:'Resume irrigation',n:'Resume irrigation at flowering. Frost protection important in Bihar.'},{s:'Fruit development',m:'Mar–Apr',wi:'High and regular',n:'Most critical irrigation period. Moisture stress causes cracking and drop.'},{s:'Post-harvest rest',m:'May–Oct',wi:'Minimal',n:'Reduce irrigation. Some summer irrigation for young trees only.'}], interCrop:'Litchi + guava intercrop. Ginger or turmeric as seasonal intercrop under litchi canopy.',  fert:'FYM 60kg/tree. Urea 1.5kg + MOP 1.0kg + SSP 1.0kg per tree in 2 splits. Borax 50g per tree.'},
+  redgram:   {months:['off','off','off','off','off','sow','grow','peak','peak','harvest','off','off'],      waterDemand:[0,0,0,0,0,3,5,7,6,2,0,0],  stages:[{s:'Germination',m:'Jun',wi:'Pre-sowing moisture',n:'Needs adequate moisture to germinate but is very drought-tolerant.'},{s:'Vegetative growth',m:'Jun–Aug',wi:'Low',n:'Highly drought-tolerant. Rainfed conditions usually sufficient.'},{s:'Flowering',m:'Aug–Sep',wi:'Critical 1 irrigation',n:'Water stress at flowering reduces pod set significantly. 1–2 irrigations needed.'},{s:'Pod fill / Maturity',m:'Sep–Oct',wi:'Minimal',n:'Drought-tolerant at maturity. Excess moisture causes disease.'}], interCrop:'Redgram + sorghum or maize is the classic intercrop of Telangana/Karnataka. Border crop around cereals.',  fert:'Rhizobium inoculant mandatory. DAP 25kg/ha basal only. No nitrogen top dressing needed.'},
+  mango:     {months:['grow','harvest','harvest','harvest','harvest','off','off','off','off','grow','grow','grow'],waterDemand:[3,2,2,2,2,0,0,0,0,4,5,4], stages:[{s:'Flowering induction',m:'Oct–Nov',wi:'Reduce or stop',n:'Water stress for 4–6 weeks before flowering is critical for bud induction.'},{s:'Flowering',m:'Dec–Feb',wi:'Avoid irrigation',n:'Rain or irrigation during flowering causes powdery mildew. Protect with fungicide.'},{s:'Fruit set',m:'Feb–Mar',wi:'Resume carefully',n:'Light irrigation after fruit set to reduce drop. Avoid heavy irrigation.'},{s:'Fruit development',m:'Mar–May',wi:'Regular irrigation',n:'Critical period for fruit size. Irrigate every 10–12 days.'},{s:'Post-harvest',m:'Jun–Sep',wi:'Minimal',n:'Allow natural rainfall during monsoon. Avoid waterlogging.'}], interCrop:'Mango + guava or papaya in inter spaces. Seasonal crops (ginger, turmeric) as intercrops in young orchards.',  fert:'FYM 50kg/tree + Urea 2.5kg + SSP 2.5kg + MOP 1.5kg per tree in 2 splits after harvest.'},
+  cashew:    {months:['grow','harvest','harvest','harvest','off','off','off','off','off','grow','grow','grow'],waterDemand:[3,2,2,2,0,0,0,0,0,4,5,4],  stages:[{s:'Flowering',m:'Dec–Mar',wi:'Dry conditions preferred',n:'Cashew flowers under dry conditions. Rain or irrigation during flowering causes disease.'},{s:'Fruit / Nut development',m:'Feb–Apr',wi:'1–2 light irrigations',n:'Light irrigation improves nut retention and kernel weight. Avoid heavy irrigation.'},{s:'Harvesting',m:'Feb–May',wi:'Dry conditions',n:'Harvest when apple (hypocarp) turns yellow-red. Dry conditions essential.'},{s:'Vegetative flush',m:'Oct–Nov',wi:'Moderate',n:'Pre-flush irrigation aids new leaf and shoot development.'}], interCrop:'Cashew + pineapple intercrop is traditional in Goa and Konkan coast. Young cashew + vegetables.',  fert:'FYM 25–30kg/tree. Urea 500g + MOP 300g + SSP 625g per tree/year.'},
+  pepper:    {months:['peak','peak','grow','grow','grow','grow','peak','peak','peak','grow','grow','peak'], waterDemand:[5,5,6,7,7,8,8,8,8,7,6,5],  stages:[{s:'Planting / Establishment',m:'Jun–Jul (with monsoon)',wi:'Monsoon rain usually sufficient',n:'Plant at onset of monsoon. Basin irrigation if rain fails.'},{s:'Flowering',m:'Apr–May',wi:'2–3 irrigations',n:'Summer irrigation is critical for flowering before monsoon.'},{s:'Berry development',m:'Jul–Nov',wi:'Monsoon + irrigation',n:'Consistent moisture through berry development. Drip irrigation in dry areas.'},{s:'Harvest',m:'Jan–Feb',wi:'Reduce',n:'Harvest when 1–2 berries in a spike turn red.'}], interCrop:'Pepper + coconut / arecanut as standard host. Pepper + coffee in Coorg.',  fert:'FYM 10kg/vine. Urea 100g + MOP 200g + SSP 200g per vine in 3 splits.'},
+  tobacco:   {months:['off','harvest','harvest','off','sow','grow','peak','harvest','off','sow','grow','peak'],waterDemand:[0,2,2,0,4,6,8,4,0,4,6,7], stages:[{s:'Nursery',m:'Oct or Apr',wi:'Regular light irrigation',n:'Nursery irrigation every 2 days. Avoid damping-off with proper drainage.'},{s:'Transplanting',m:'Nov or May',wi:'Irrigation immediately after',n:'Critical establishment irrigation. Daily for first week after transplanting.'},{s:'Vegetative growth',m:'Nov–Dec / May–Jun',wi:'Moderate',n:'Irrigation every 10–12 days. Avoid over-irrigation — increases disease risk.'},{s:'Topping / Leaf maturation',m:'Dec–Jan / Jun–Jul',wi:'Reduce',n:'Reduce irrigation as leaves mature for quality leaf development.'}], interCrop:'Tobacco + finger millet (ragi) in Andhra Pradesh. Tobacco rotation with pulse crops.',  fert:'FYM 20t/ha. Urea 80kg/ha in 3 splits. High potash: MOP 100kg/ha — critical for leaf quality.'},
+  ragi:      {months:['off','off','off','off','off','sow','grow','peak','harvest','off','off','off'],       waterDemand:[0,0,0,0,0,3,5,7,3,0,0,0],  stages:[{s:'Germination',m:'Jun',wi:'Light moisture',n:'Drought-tolerant crop. Minimal irrigation needed if planted with monsoon.'},{s:'Tillering',m:'Jun–Jul',wi:'Moderate',n:'1 irrigation at tillering if rain fails. Critical for tiller number.'},{s:'Ear head emergence',m:'Jul–Aug',wi:'Critical 1 irrigation',n:'Single most important irrigation. Water stress here sharply reduces grain number.'},{s:'Grain fill',m:'Aug–Sep',wi:'Low',n:'Light irrigation if drought occurs. Ragi is otherwise very drought-tolerant.'}], interCrop:'Ragi + cowpea traditional intercrop of Karnataka. Ragi + horsegram.',  fert:'FYM 5t/ha. Urea 60kg/ha in 2 splits. Azospirillum biofertiliser reduces nitrogen need.'},
+  onion:     {months:['harvest','off','off','off','off','off','off','off','off','off','sow','grow'],        waterDemand:[3,0,0,0,0,0,0,0,0,0,4,7],  stages:[{s:'Transplanting',m:'Oct–Nov',wi:'Immediate irrigation',n:'Irrigate immediately after transplanting. Every 3–4 days for 2 weeks.'},{s:'Vegetative growth',m:'Nov–Dec',wi:'Moderate — every 7–10 days',n:'Consistent moisture for good leaf development. Avoid water stress.'},{s:'Bulbing',m:'Dec–Jan',wi:'High — most critical',n:'Water stress at bulbing severely reduces yield and bulb size.'},{s:'Maturity',m:'Jan–Feb',wi:'Stop 2 weeks before harvest',n:'Cease irrigation when neck falls. Premature irrigation causes rotting.'}], interCrop:'Onion + garlic intercrop. Onion + carrot. Short-duration crop — rotate with longer-duration crops.',  fert:'FYM 20t/ha. DAP 50kg/ha basal. Urea 75kg/ha in 3 splits. MOP 80kg/ha for bulb quality.'},
+  jowar:     {months:['off','off','harvest','off','off','sow','grow','peak','harvest','off','sow','grow'],  waterDemand:[0,0,1,0,0,3,5,7,3,0,3,5],  stages:[{s:'Germination',m:'Jun / Nov',wi:'Moderate pre-sowing',n:'Drought-tolerant at germination but needs moisture for stand establishment.'},{s:'Vegetative growth',m:'Jun–Jul / Nov–Dec',wi:'Low',n:'Very drought-tolerant. 1–2 irrigations if monsoon fails.'},{s:'Boot leaf / Panicle',m:'Jul–Aug / Dec–Jan',wi:'Critical 1 irrigation',n:'Moisture at boot leaf stage prevents pollen sterility and yield loss.'},{s:'Grain fill',m:'Aug–Sep / Jan–Feb',wi:'Low',n:'1 irrigation if dry. Excess water causes grain moulds.'}], interCrop:'Jowar + pigeon pea traditional intercrop. Jowar + cowpea fodder system.',  fert:'Low-input crop. FYM 10t/ha. Urea 40kg/ha in 2 splits only if soil test shows deficiency.'},
+  vegetables:{months:['grow','grow','grow','grow','peak','peak','peak','peak','grow','grow','grow','grow'], waterDemand:[5,5,6,7,8,8,8,8,7,6,5,5],  stages:[{s:'Nursery / Direct sowing',m:'Year-round depending on crop',wi:'Light regular irrigation',n:'Maintain consistent moisture in nursery. Avoid waterlogging.'},{s:'Vegetative growth',m:'All year',wi:'High and regular',n:'Vegetables have shallow roots and are highly sensitive to water stress.'},{s:'Flowering / Fruiting',m:'All year',wi:'Very High',n:'Most critical stage. Consistent moisture for fruit set and quality.'},{s:'Harvest',m:'All year',wi:'Reduce slightly',n:'Light irrigation during harvest period. Stop if rain forecasted.'}], interCrop:'Vegetable polyculture common in kitchen gardens. Tomato + basil, beans + corn traditional companion planting.',  fert:'FYM 25t/ha. Fertigation through drip is most efficient. NPK 20:20:20 water-soluble fertilizer.'}
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  SOIL_P - irrigation thresholds keyed by soil type
+// ══════════════════════════════════════════════════════════════════
+function getSoilP(soilKey) {
+  const s = SOIL_DB[soilKey];
+  return s ? {low:s.low,safeMin:s.safeMin,safeMax:s.safeMax,high:s.high,excess:s.excess,drain:s.drain,label:s.label} :
+    {low:30,safeMin:31,safeMax:70,high:85,excess:95,drain:1.0,label:'Loam'};
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CROPS (basic info for chips)
+// ══════════════════════════════════════════════════════════════════
+const CROPS = {
+  wheat:{name:'Wheat',icon:'🌾',cf:1.0,targetMoist:55,waterNeed:'Moderate (450–650mm)',ideal:'40–65%',season:'Rabi (Oct–Mar)'},
+  rice:{name:'Rice',icon:'🍚',cf:1.4,targetMoist:78,waterNeed:'High (900–1200mm)',ideal:'70–85%',season:'Kharif (Jun–Nov)'},
+  cotton:{name:'Cotton',icon:'🌿',cf:1.1,targetMoist:60,waterNeed:'Moderate (700–900mm)',ideal:'50–70%',season:'Kharif (Apr–Nov)'},
+  sugarcane:{name:'Sugarcane',icon:'🎋',cf:1.5,targetMoist:70,waterNeed:'Very High (1500–2000mm)',ideal:'60–80%',season:'Year-round'},
+  maize:{name:'Maize',icon:'🌽',cf:1.0,targetMoist:58,waterNeed:'Moderate (500–800mm)',ideal:'45–70%',season:'Kharif/Rabi'},
+  bajra:{name:'Bajra',icon:'🌿',cf:0.7,targetMoist:44,waterNeed:'Low (300–400mm)',ideal:'30–55%',season:'Kharif (Jun–Sep)'},
+  jowar:{name:'Jowar',icon:'🌾',cf:0.8,targetMoist:48,waterNeed:'Low (400–500mm)',ideal:'35–60%',season:'Kharif/Rabi'},
+  mustard:{name:'Mustard',icon:'🌼',cf:0.8,targetMoist:46,waterNeed:'Low (250–400mm)',ideal:'35–55%',season:'Rabi (Oct–Mar)'},
+  groundnut:{name:'Groundnut',icon:'🥜',cf:1.0,targetMoist:54,waterNeed:'Moderate (500–700mm)',ideal:'40–65%',season:'Kharif (Jun–Sep)'},
+  soybean:{name:'Soybean',icon:'🌱',cf:1.0,targetMoist:56,waterNeed:'Moderate (450–700mm)',ideal:'45–65%',season:'Kharif (Jun–Oct)'},
+  potato:{name:'Potato',icon:'🥔',cf:1.1,targetMoist:60,waterNeed:'Moderate (500–700mm)',ideal:'50–70%',season:'Rabi (Oct–Mar)'},
+  onion:{name:'Onion',icon:'🧅',cf:0.9,targetMoist:50,waterNeed:'Moderate (350–550mm)',ideal:'40–60%',season:'Rabi (Nov–Apr)'},
+  banana:{name:'Banana',icon:'🍌',cf:1.3,targetMoist:70,waterNeed:'High (900–1200mm)',ideal:'60–80%',season:'Year-round'},
+  coconut:{name:'Coconut',icon:'🥥',cf:1.2,targetMoist:65,waterNeed:'High (1000–1500mm)',ideal:'55–75%',season:'Year-round'},
+  coffee:{name:'Coffee',icon:'☕',cf:1.1,targetMoist:60,waterNeed:'Moderate (800–1200mm)',ideal:'50–70%',season:'Year-round'},
+  tea:{name:'Tea',icon:'🍵',cf:1.3,targetMoist:70,waterNeed:'High (1200–1500mm)',ideal:'60–80%',season:'Year-round'},
+  jute:{name:'Jute',icon:'🌿',cf:1.2,targetMoist:70,waterNeed:'High (1000–1200mm)',ideal:'60–80%',season:'Kharif (Mar–Aug)'},
+  apple:{name:'Apple',icon:'🍎',cf:1.1,targetMoist:56,waterNeed:'Moderate (600–900mm)',ideal:'45–65%',season:'Summer (Apr–Oct)'},
+  rubber:{name:'Rubber',icon:'🌳',cf:1.2,targetMoist:70,waterNeed:'High (1200–2000mm)',ideal:'60–80%',season:'Year-round'},
+  chilli:{name:'Chilli',icon:'🌶️',cf:1.0,targetMoist:55,waterNeed:'Moderate (600–800mm)',ideal:'45–65%',season:'Kharif/Rabi'},
+  tobacco:{name:'Tobacco',icon:'🌿',cf:0.9,targetMoist:50,waterNeed:'Moderate (500–700mm)',ideal:'40–60%',season:'Rabi (Oct–Mar)'},
+  pulses:{name:'Pulses',icon:'🫘',cf:0.75,targetMoist:45,waterNeed:'Low (300–450mm)',ideal:'35–55%',season:'Rabi/Kharif'},
+  turmeric:{name:'Turmeric',icon:'🌿',cf:1.1,targetMoist:65,waterNeed:'Moderate (700–900mm)',ideal:'55–75%',season:'Kharif (Jun–Feb)'},
+  lichi:{name:'Litchi',icon:'🍒',cf:1.1,targetMoist:60,waterNeed:'Moderate (800–1000mm)',ideal:'50–70%',season:'Summer (Apr–Jun)'},
+  redgram:{name:'Red Gram',icon:'🫘',cf:0.85,targetMoist:50,waterNeed:'Low (350–500mm)',ideal:'40–60%',season:'Kharif (Jun–Dec)'},
+  mango:{name:'Mango',icon:'🥭',cf:1.0,targetMoist:55,waterNeed:'Moderate (700–1200mm)',ideal:'45–65%',season:'Summer (Mar–Jul)'},
+  cashew:{name:'Cashew',icon:'🌰',cf:0.9,targetMoist:50,waterNeed:'Low (600–800mm)',ideal:'40–60%',season:'Winter (Nov–May)'},
+  pepper:{name:'Pepper',icon:'🌿',cf:1.1,targetMoist:65,waterNeed:'Moderate (800–1000mm)',ideal:'55–75%',season:'Year-round'},
+  ragi:{name:'Ragi',icon:'🌾',cf:0.8,targetMoist:48,waterNeed:'Low (350–500mm)',ideal:'35–58%',season:'Kharif (Jun–Nov)'},
+  vegetables:{name:'Vegetables',icon:'🥦',cf:1.0,targetMoist:55,waterNeed:'Moderate (400–700mm)',ideal:'45–65%',season:'Year-round'},
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════════
+let ST = {region:'punjab',crop:'wheat',moisture:45,temp:28,humid:55,rain:0,wind:12,et:3.5,forecast:{}};
+let trendChart=null, budgetChart=null;
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ══════════════════════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════════════════════
+function classify(m,p){if(m>p.excess)return'critical';if(m>p.high)return'excess';if(m>p.safeMax)return'high';if(m<p.low)return'low';return'safe'}
+function zCls(z){return{safe:'p-safe',low:'p-low',high:'p-high',excess:'p-excess',critical:'p-critical'}[z]}
+function zLbl(z){return{safe:'Safe',low:'Low Water',high:'High Water',excess:'Excess Water',critical:'Critical'}[z]}
+function zCol(z){return{safe:'var(--green)',low:'var(--amber)',high:'var(--orange)',excess:'var(--red)',critical:'var(--red)'}[z]}
+function zAC(z){return{safe:'safe',low:'low',high:'high',excess:'excess',critical:'critical'}[z]}
+function calcWater(m,p,crop,rain,prevwater,lastirr){
+  const c=CROPS[crop],target=c?c.targetMoist:52,cf=c?c.cf:1.0;
+  let l=Math.max(0,target-m)*cf*0.55;
+  l-=Math.min(l,(rain/10)*p.drain*0.8);
+  if(lastirr<6)l*=0.3;else if(lastirr<12)l*=0.65;
+  l=Math.max(0,l-prevwater*0.12);
+  if(m>p.safeMax)l=0;
+  return Math.round(l*10)/10;
+}
+function calcET(t,h,w){return Math.round(Math.max(0.3,Math.min(14,0.0023*(t+17.8)*Math.sqrt(Math.max(0.1,t*(1-h/120)))*3.8+w*0.02))*10)/10}
+function effScore(m,l,p,crop){
+  const c=CROPS[crop],target=c?c.targetMoist:52;
+  if(l<=0&&m>=p.safeMin&&m<=p.safeMax)return 94+Math.round(Math.random()*4);
+  if(l<=0&&m<p.safeMin)return 38;
+  const after=Math.min(100,m+l*p.drain),over=Math.max(0,after-p.safeMax),under=Math.max(0,target-after);
+  return Math.max(5,Math.min(99,Math.round(100-over*3.2-under*1.4)));
+}
+function mAfterIrr(m,l,p){return Math.min(100,Math.round((m+l*p.drain)*10)/10)}
+function mAfterRain(m,r,p){return Math.min(100,Math.round((m+r*p.drain*0.5)*10)/10)}
+function setTwin(vi,pi,m,p){
+  const z=classify(m,p),el=document.getElementById(vi),pill=document.getElementById(pi);
+  if(el){el.textContent=m+'%';el.style.color=zCol(z)}
+  if(pill){pill.className='tc-pill '+zCls(z);pill.textContent=zLbl(z)}
+}
+function onSlider(id,di,unit){document.getElementById(di).textContent=document.getElementById(id).value+' '+unit}
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  WEATHER FETCH (Open-Meteo)
+// ══════════════════════════════════════════════════════════════════
+async function loadWeather(){
+  const reg=REGIONS[ST.region];
+  showLoading('Fetching live weather for '+reg.name+'…');
+  document.getElementById('errorNotice').style.display='none';
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${reg.lat}&longitude=${reg.lon}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m&daily=precipitation_sum,temperature_2m_max,precipitation_probability_max&timezone=Asia%2FKolkata&forecast_days=7`;
+    const res=await fetch(url);if(!res.ok)throw new Error();
+    const d=await res.json(),cur=d.current;
+    ST.temp=Math.round(cur.temperature_2m);ST.humid=Math.round(cur.relative_humidity_2m);
+    ST.rain=Math.round(cur.precipitation*10)/10;ST.wind=Math.round(cur.wind_speed_10m);
+    ST.et=calcET(ST.temp,ST.humid,ST.wind);ST.forecast=d.daily||{};
+  }catch(e){
+    const fb=climateEst(ST.region);
+    ST.temp=fb.temp;ST.humid=fb.humid;ST.rain=fb.rain;ST.wind=fb.wind;
+    ST.et=calcET(ST.temp,ST.humid,ST.wind);ST.forecast=fb.forecast;
+    document.getElementById('errorNotice').style.display='block';
+  }
+  updateWeatherUI();runEngine();hideLoading();
+}
+function climateEst(rk){
+  const mo=new Date().getMonth(),iM=mo>=5&&mo<=9;
+  const e={rajasthan:{temp:iM?36:28,humid:iM?55:30,rain:iM?2:0,wind:18},kerala:{temp:iM?29:32,humid:iM?90:75,rain:iM?12:2,wind:20},punjab:{temp:iM?34:22,humid:iM?65:45,rain:iM?4:0.2,wind:12},default:{temp:iM?30:25,humid:iM?70:50,rain:iM?3:0.5,wind:14}}[rk]||{temp:iM?30:25,humid:iM?70:50,rain:iM?3:0.5,wind:14};
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],td=new Date().getDay();
+  return{...e,forecast:{time:Array.from({length:7},(_,i)=>days[(td+i)%7]),precipitation_sum:Array.from({length:7},()=>Math.round(Math.random()*(iM?15:3)*10)/10),temperature_2m_max:Array.from({length:7},()=>e.temp+Math.round((Math.random()-0.3)*4)),precipitation_probability_max:Array.from({length:7},()=>Math.round(Math.random()*(iM?80:30)))}};
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  REGION/CROP UI
+// ══════════════════════════════════════════════════════════════════
+function onRegionChange(){
+  ST.region=document.getElementById('regionSelect').value;
+  const reg=REGIONS[ST.region];
+  document.getElementById('regionInfo').innerHTML=`<b>${reg.name}</b> · ${(SOIL_DB[reg.soil]||{label:reg.soil}).label}<br>${reg.desc}`;
+  const grid=document.getElementById('cropGrid');grid.innerHTML='';
+  reg.crops.forEach(k=>{
+    const c=CROPS[k];if(!c)return;
+    const d=document.createElement('div');
+    d.className='crop-chip'+(k===ST.crop?' active':'');
+    d.innerHTML=`<span class="crop-icon">${c.icon}</span>${c.name}`;
+    d.onclick=()=>selectCrop(k);grid.appendChild(d);
+  });
+  if(!reg.crops.includes(ST.crop))selectCrop(reg.crops[0],false);
+  loadWeather();
+}
+function selectCrop(k,doRun=true){
+  ST.crop=k;
+  const reg=REGIONS[ST.region];
+  document.querySelectorAll('.crop-chip').forEach((el,i)=>{el.classList.toggle('active',reg.crops[i]===k)});
+  updateCropInfo();updateSoilTab();updateCalendarTab();
+  if(doRun)runEngine();
+}
+function updateCropInfo(){
+  const c=CROPS[ST.crop];if(!c)return;
+  document.getElementById('ciName').textContent=c.icon+' '+c.name;
+  document.getElementById('ciWater').textContent=c.waterNeed;
+  document.getElementById('ciMoist').textContent=c.ideal;
+  document.getElementById('ciSeason').textContent=c.season;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  WEATHER UI
+// ══════════════════════════════════════════════════════════════════
+function updateWeatherUI(){
+  document.getElementById('wx-temp').textContent=ST.temp+'°C';
+  document.getElementById('wx-humid').textContent=ST.humid+'%';
+  document.getElementById('wx-rain').textContent=ST.rain+' mm';
+  document.getElementById('wx-wind').textContent=ST.wind+' km/h';
+  document.getElementById('wx-et').textContent=ST.et+' mm';
+  const fcst=ST.forecast,row=document.getElementById('fcstRow');
+  row.innerHTML='';
+  if(fcst&&fcst.time){
+    fcst.time.forEach((day,i)=>{
+      const pr=fcst.precipitation_sum?fcst.precipitation_sum[i]:0,tmp=fcst.temperature_2m_max?fcst.temperature_2m_max[i]:ST.temp,pb=fcst.precipitation_probability_max?fcst.precipitation_probability_max[i]:0;
+      const icon=pr>10?'⛈️':pr>3?'🌧️':pr>0.5?'🌦️':'☀️';
+      row.innerHTML+=`<div class="fcst-card"><div class="fcst-day">${typeof day==='string'?day:new Date(day).toLocaleDateString('en-IN',{weekday:'short'})}</div><div class="fcst-icon">${icon}</div><div class="fcst-temp">${Math.round(tmp)}°</div><div class="fcst-rain">${pr.toFixed(1)}mm · ${pb}%</div></div>`;
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  SOIL TAB
+// ══════════════════════════════════════════════════════════════════
+function updateSoilTab(){
+  const reg=REGIONS[ST.region],s=SOIL_DB[reg.soil];if(!s)return;
+  document.getElementById('soilPanelTitle').textContent='Soil Profile — '+reg.name;
+  document.getElementById('soilCropName').textContent=(CROPS[ST.crop]||{name:ST.crop}).name;
+  document.getElementById('ss-type').textContent=s.label;document.getElementById('ss-type-sub').textContent=reg.soil;
+  document.getElementById('ss-ph').textContent=s.ph;document.getElementById('ss-ph-sub').textContent=s.phDesc;
+  document.getElementById('ss-whc').textContent=s.whc;document.getElementById('ss-whc-sub').textContent='mm water per metre depth';
+  document.getElementById('ss-drain').textContent=s.drainClass;document.getElementById('ss-drain-sub').textContent=s.drainDesc;
+  document.getElementById('ss-om').textContent=s.om;document.getElementById('ss-om-sub').textContent=s.omDesc+' organic matter';
+  document.getElementById('ss-n').textContent=s.nitrogen;document.getElementById('ss-n-sub').textContent=s.nDesc;
+  // Texture bar
+  const tb=document.getElementById('textureBar');
+  tb.innerHTML=`<div class="soil-texture-seg" style="flex:${s.sand};background:#c8976e">${s.sand>15?s.sand+'% Sand':''}</div><div class="soil-texture-seg" style="flex:${s.silt};background:#8B6340">${s.silt>15?s.silt+'% Silt':''}</div><div class="soil-texture-seg" style="flex:${s.clay};background:#5a3e28">${s.clay>15?s.clay+'% Clay':''}</div>`;
+  // Moisture profile marker
+  const pct=((ST.moisture-s.wiltPoint)/(s.saturation-s.wiltPoint)*100);
+  document.getElementById('moisturePositionMarker').style.left=Math.max(0,Math.min(100,pct))+'%';
+  document.getElementById('wp-label').textContent='WP: '+s.wiltPoint+'%';
+  document.getElementById('fc-label').textContent='FC: '+s.fieldCap+'%';
+  document.getElementById('sat-label').textContent='Sat: '+s.saturation+'%';
+  // Advisory
+  document.getElementById('soilAdvisory').innerHTML=s.advisory.replace(/\. /g,'.<br><br>');
+  // Irrigation methods
+  const img=document.getElementById('irrigMethodGrid');
+  img.innerHTML=s.irrigMethods.map(m=>`<div class="mini-card"><div class="mini-label">${m.m}</div><div style="font-size:12px;color:var(--text2);margin-top:2px">${m.r}</div></div>`).join('');
+  // Health bars
+  const shg=document.getElementById('soilHealthGrid');
+  shg.innerHTML=s.health.map(h=>`<div style="display:flex;align-items:center;gap:10px"><div style="font-size:11px;color:var(--text3);width:80px;flex-shrink:0">${h.i}</div><div style="flex:1;height:7px;background:var(--bg4);border-radius:4px;overflow:hidden"><div style="width:${h.v}%;height:100%;background:${h.c};border-radius:4px;transition:width 0.5s ease"></div></div><div style="font-family:var(--font-m);font-size:10px;color:var(--text3);width:30px;text-align:right">${h.v}%</div></div>`).join('');
+  // Crop-soil compatibility
+  updateCompatGrid();
+}
+
+function updateCompatGrid(){
+  const reg=REGIONS[ST.region],s=SOIL_DB[reg.soil];
+  const cropList=reg.crops.slice(0,6);
+  const compat=document.getElementById('compatGrid');
+  compat.innerHTML=cropList.map(k=>{
+    const c=CROPS[k];if(!c)return'';
+    const score=calcCompatScore(k,reg.soil);
+    const col=score>75?'var(--green)':score>50?'var(--amber)':'var(--red)';
+    return `<div class="mini-card"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:11px;color:var(--text2)">${c.icon} ${c.name}</div><div style="font-family:var(--font-m);font-size:11px;font-weight:700;color:${col}">${score}%</div></div><div style="height:4px;background:var(--bg4);border-radius:2px;margin-top:5px;overflow:hidden"><div style="width:${score}%;height:100%;background:${col};border-radius:2px;transition:width 0.5s"></div></div></div>`;
+  }).join('');
+}
+
+function calcCompatScore(crop,soilKey){
+  const scores={
+    'alluvial-loam':{wheat:95,rice:85,sugarcane:88,maize:82,potato:80,mustard:78,vegetables:85,default:70},
+    'sandy-loam':{bajra:88,mustard:80,groundnut:78,wheat:72,cotton:68,default:55},
+    'arid-sandy':{bajra:90,jowar:80,groundnut:72,mustard:70,cotton:65,default:40},
+    'black-clay':{cotton:92,sugarcane:85,soybean:82,jowar:80,wheat:70,rice:65,default:60},
+    'black-red':{rice:85,cotton:80,chilli:78,sugarcane:75,tobacco:72,default:60},
+    'red-laterite':{coffee:90,ragi:85,groundnut:80,maize:72,vegetables:70,default:55},
+    'laterite':{coconut:92,rubber:90,pepper:88,banana:82,rice:75,cashew:85,default:60},
+    'alluvial-clay':{rice:90,jute:88,potato:82,mustard:78,wheat:75,default:65},
+    'mountain-loam':{apple:92,maize:80,potato:82,wheat:75,vegetables:78,default:60}
+  };
+  const s=scores[soilKey];if(!s)return 60;
+  return s[crop]||s.default||60;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CROP CALENDAR TAB
+// ══════════════════════════════════════════════════════════════════
+function updateCalendarTab(){
+  const cal=CROP_CAL[ST.crop];const c=CROPS[ST.crop];
+  document.getElementById('calCropName').textContent=c?c.icon+' '+c.name:ST.crop;
+  if(!cal){
+    document.getElementById('calPhaseBody').textContent='No calendar data for this crop.';
+    document.getElementById('calMonthsGrid').innerHTML='';
+    return;
+  }
+  const today=new Date(),curMonth=today.getMonth();
+  const phase=cal.months[curMonth];
+  // Phase now box
+  document.getElementById('calPhaseTitle').textContent='Current Phase: '+phaseLabel(phase)+' ('+MN[curMonth]+')';
+  const wd=cal.waterDemand[curMonth];
+  const wdLabel=wd>=8?'Very High':wd>=6?'High':wd>=4?'Moderate':wd>=2?'Low':'Minimal';
+  document.getElementById('calPhaseBody').innerHTML=`<b>Phase:</b> ${phaseLabel(phase)} &nbsp;·&nbsp; <b>Water demand:</b> ${wdLabel} (${wd}/10) &nbsp;·&nbsp; <b>Month:</b> ${MN[curMonth]}<br>${getCurrentPhaseAdvice(cal,phase,c,curMonth)}`;
+  // Month grid
+  const grid=document.getElementById('calMonthsGrid');grid.innerHTML='';
+  cal.months.forEach((ph,i)=>{
+    const isToday=i===curMonth;
+    const div=document.createElement('div');
+    div.className='cal-month m-'+getMonthClass(ph)+(isToday?' today-marker':'')+(isToday&&ph!=='off'?' m-current-phase':'');
+    div.textContent=MN[i].slice(0,1);
+    div.title=MN[i]+': '+phaseLabel(ph);
+    grid.appendChild(div);
+  });
+  // Water demand bars
+  const wdb=document.getElementById('wdbMonths');wdb.innerHTML='';
+  const maxWD=Math.max(...cal.waterDemand,1);
+  cal.waterDemand.forEach((wd,i)=>{
+    const h=Math.round((wd/maxWD)*52)+8;
+    const col=wd>=8?'var(--blue)':wd>=5?'var(--green)':wd>=2?'var(--amber)':'var(--bg4)';
+    const isCur=i===curMonth;
+    wdb.innerHTML+=`<div class="wdb-wrap"><div class="wdb-bar" style="height:${h}px;background:${col};width:100%;${isCur?'box-shadow:0 0 0 2px var(--green)':''}"></div><div class="wdb-mn">${MN[i].slice(0,1)}</div></div>`;
+  });
+  // Stage guide
+  const sg=document.getElementById('stageGuide');sg.innerHTML='';
+  if(cal.stages){
+    cal.stages.forEach((st,i)=>{
+      sg.innerHTML+=`<div style="display:flex;gap:10px;padding:10px 12px;background:var(--bg2);border-radius:var(--rs);border:1px solid var(--border)"><div style="min-width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-family:var(--font-m);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div><div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px">${st.s} &nbsp;<span style="color:var(--text3);font-weight:400">${st.m}</span></div><div style="font-size:11px;color:var(--green);font-family:var(--font-m);margin-bottom:2px">${st.wi}</div><div style="font-size:11px;color:var(--text2)">${st.n}</div></div></div>`;
+    });
+  }
+  // Inter-crop
+  document.getElementById('interCropInfo').textContent=cal.interCrop||'No intercrop data available.';
+  // Fertiliser
+  document.getElementById('fertSchedule').textContent=cal.fert||'No fertiliser data available.';
+  // Season warning
+  checkSeasonWarning(cal,curMonth,c);
+  // Budget chart
+  updateBudgetChart(cal.waterDemand);
+}
+
+function getMonthClass(ph){
+  if(ph==='sow')return'sow';if(ph==='grow')return'grow';if(ph==='peak')return'peak';if(ph==='harvest')return'harvest';if(ph==='rest')return'rest';return'off';
+}
+function phaseLabel(ph){
+  return{sow:'Sowing / Planting',grow:'Growing',peak:'Peak Growth',harvest:'Harvest',rest:'Rest / Dormant',off:'Off-Season',tapping:'Tapping (Rubber)'}[ph]||ph;
+}
+function getCurrentPhaseAdvice(cal,phase,c,mo){
+  const wd=cal.waterDemand[mo];
+  if(phase==='off')return`${c?c.name:'This crop'} is in off-season. No irrigation needed. Prepare field for next sowing cycle.`;
+  if(phase==='sow')return`Sowing season for ${c?c.name:'this crop'}. Ensure good seed-bed moisture. Irrigation need: ${wd>=5?'High':'Moderate'}.`;
+  if(phase==='peak')return`Peak growth phase. Water demand is highest now (${wd}/10). Do not allow field to dry below minimum threshold.`;
+  if(phase==='harvest')return`Harvest season. Reduce irrigation to dry down the field. Excess moisture causes quality loss and harvest difficulty.`;
+  if(phase==='rest')return`Rest/dormant phase. Minimal water needed. Some winter irrigation for perennial crops.`;
+  return`Active growing phase. Water demand: ${wd}/10. Follow stage-wise guide below.`;
+}
+function checkSeasonWarning(cal,curMonth,c){
+  const phase=cal.months[curMonth];
+  const sw=document.getElementById('seasonWarn');
+  if(phase==='off'){
+    sw.style.display='block';
+    sw.innerHTML=`📅 <b>Season Alert:</b> ${c?c.name:'This crop'} is currently in its <b>off-season</b> (${MN[curMonth]}). Irrigation may not be productive. Check the Crop Calendar tab for correct sowing time.`;
+  } else {
+    sw.style.display='none';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  MAIN ENGINE
+// ══════════════════════════════════════════════════════════════════
+function runEngine(){
+  const m=ST.moisture,reg=REGIONS[ST.region],p=getSoilP(reg.soil);
+  const crop=ST.crop,rain=ST.rain;
+  const lastirr=parseInt(document.getElementById('lastirr').value);
+  const prevwater=parseInt(document.getElementById('prevwater').value);
+  const zone=classify(m,p),litres=calcWater(m,p,crop,rain,prevwater,lastirr);
+  const eff=effScore(m,litres,p,crop),c=CROPS[crop]||{},target=c.targetMoist||52;
+  // top pill
+  const tp=document.getElementById('topPill');tp.className='zone-hdr-pill '+zCls(zone);tp.textContent=zLbl(zone);
+  // moisture display
+  document.getElementById('moistureBig').textContent=m+'%';document.getElementById('moistureBig').style.color=zCol(zone);
+  document.getElementById('zoneNeedle').style.left=m+'%';
+  const ms=document.getElementById('moistureSlider');ms.classList.remove('warn','danger');
+  if(zone==='low')ms.classList.add('warn');if(zone==='excess'||zone==='critical')ms.classList.add('danger');
+  // alert
+  const ac=buildAlert(zone,m,p,rain,litres,crop,c);
+  const aw=document.getElementById('alertWrap');aw.className='alert-wrap '+zAC(zone);
+  document.getElementById('alertTitle').textContent=ac.title;document.getElementById('alertTitle').style.color=zCol(zone);
+  document.getElementById('alertBody').textContent=ac.body;
+  document.getElementById('alertAction').textContent=ac.action;document.getElementById('alertAction').style.color=zCol(zone);
+  // metric cards
+  document.getElementById('mc-moisture').textContent=m+'%';document.getElementById('mc-moisture').style.color=zCol(zone);
+  document.getElementById('mc-moisture-sub').textContent=p.label+' · '+zLbl(zone);
+  document.getElementById('mc-water').textContent=litres>0?litres+' L':'0 L';document.getElementById('mc-water').style.color=litres>0?'var(--amber)':'var(--text3)';
+  document.getElementById('mc-water-sub').textContent=litres>0?'Recommended for '+(c.name||crop):'No irrigation needed';
+  const timing=zone==='low'&&rain<1?'Irrigate now':zone==='low'?'Delay 4–6h':zone==='safe'?'No action':'Stop / drain';
+  document.getElementById('mc-timing').textContent=timing;document.getElementById('mc-timing').style.color=zCol(zone);
+  document.getElementById('mc-eff').textContent=eff+'%';document.getElementById('mc-eff').style.color=eff>75?'var(--green)':eff>45?'var(--amber)':'var(--red)';
+  document.getElementById('mc-eff-sub').textContent=eff>75?'Optimal':eff>45?'Moderate':'Poor';
+  // twin
+  setTwin('tw0','tw0p',m,p);
+  const ai=litres>0?mAfterIrr(m,litres,p):m,ar=mAfterRain(m,rain,p);
+  const ab=Math.min(100,Math.round((ai+ar-m)*10)/10);
+  setTwin('tw1','tw1p',ai,p);setTwin('tw2','tw2p',ar,p);setTwin('tw3','tw3p',ab,p);
+  // trend chart
+  const pred=[];let cur=m;
+  for(let i=0;i<6;i++){cur=Math.max(0,cur-ST.et*0.055*p.drain);if(i===1&&litres>0)cur=Math.min(100,cur+litres*p.drain);if(i===2&&rain>0)cur=Math.min(100,cur+rain*p.drain*0.45);pred.push(Math.round(cur*10)/10)}
+  updateChart(m,pred,p.safeMin,p.safeMax);
+  // severity
+  ['sev0','sev1','sev2'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  let sevTxt='No excess water risk. Moisture is within safe zone.';
+  if(zone==='high'){document.getElementById('sev0').classList.add('on');sevTxt=`Mild excess (${m}% > ${p.safeMax}%). Reduce irrigation frequency.`}
+  else if(zone==='excess'){['sev0','sev1'].forEach(id=>document.getElementById(id).classList.add('on'));sevTxt=`Moderate excess (${m}% > ${p.high}%). Stop irrigation. Root oxygen deprivation risk.`}
+  else if(zone==='critical'){['sev0','sev1','sev2'].forEach(id=>document.getElementById(id).classList.add('on'));sevTxt=`CRITICAL (${m}%). Waterlogging. Crop damage imminent. Open drainage now.`}
+  document.getElementById('sevText').textContent=sevTxt;
+  // efficiency panel
+  document.getElementById('effNum').textContent=eff+'%';document.getElementById('effNum').style.color=eff>75?'var(--green)':eff>45?'var(--amber)':'var(--red)';
+  document.getElementById('effFill').style.width=eff+'%';document.getElementById('effFill').style.background=eff>75?'var(--green)':eff>45?'var(--amber)':'var(--red)';
+  document.getElementById('effText').textContent=eff>75?'Irrigation is highly efficient for current crop and soil.':eff>45?'Moderate efficiency. Adjust dose or timing.':'Poor efficiency. Review inputs and soil conditions.';
+  document.getElementById('mi0').textContent=target+'%';
+  const loss=Math.round(Math.max(0,mAfterIrr(m,litres,p)-p.safeMax)*0.28*10)/10;
+  document.getElementById('mi1').textContent=loss+' L';document.getElementById('mi1').style.color=loss>3?'var(--red)':'var(--text)';
+  document.getElementById('mi2').textContent=timing;
+  document.getElementById('mi3').textContent=rain>5?'High':rain>1?'Moderate':rain>0?'Low':'None';
+  // soil moisture profile marker
+  const s=SOIL_DB[reg.soil];
+  if(s){const pct=((m-s.wiltPoint)/(s.saturation-s.wiltPoint)*100);const mk=document.getElementById('moisturePositionMarker');if(mk)mk.style.left=Math.max(0,Math.min(100,pct))+'%'}
+  updateCropInfo();
+}
+
+function buildAlert(zone,m,p,rain,litres,crop,c){
+  const cn=c.name||crop,rn=rain>5?`Heavy rain (${rain}mm) received — delay irrigation.`:rain>1?`Some rain (${rain}mm) — reduce dose.`:'Minimal rain — rely on irrigation.';
+  const a={
+    safe:{title:`Safe Zone — ${cn} Field is Well-Hydrated`,body:`Moisture at ${m}% is within ideal range (${p.safeMin}–${p.safeMax}%) for ${cn}. ET rate: ${ST.et}mm/day. ${rn}`,action:'→ Action: No irrigation required. Monitor every 2–4 hours.'},
+    low:{title:`Low Water Alert — ${cn} Needs Irrigation`,body:`Moisture at ${m}% is below safe minimum (${p.low}%) for ${cn}. Stress likely. ${rn} Recommended: ${litres}L.`,action:rain>3?'→ Action: Delay 4–6 hours. Reassess after rain.':'→ Action: Irrigate now with recommended dose.'},
+    high:{title:`High Water Warning — Reduce Irrigation for ${cn}`,body:`Moisture at ${m}% is above optimal (${p.safeMax}%) for ${cn}. Root disease risk if sustained.`,action:'→ Action: Skip next cycle. Check drainage. Monitor 6 hours.'},
+    excess:{title:`Excess Water Alert — Stop All Irrigation`,body:`Moisture at ${m}% is dangerously high. ${cn} root oxygen deprivation risk. Waterlogging may cause significant crop damage.`,action:'→ Action: Stop irrigation immediately. Open drainage. Delay 24+ hours.'},
+    critical:{title:`⚠ Critical — Waterlogging! ${cn} Damage Imminent`,body:`Soil at ${m}% — critically saturated. Waterlogging confirmed. ${cn} root damage likely within hours.`,action:'→ EMERGENCY: Stop all water. Open emergency drainage. Inspect crops now.'}
+  };
+  return a[zone];
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  WHAT-IF SIM
+// ══════════════════════════════════════════════════════════════════
+function sim(type,btn){
+  document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+  if(type==='clear'){document.getElementById('simText').textContent='Choose a scenario to simulate field response.';return}
+  btn.classList.add('active');
+  const m=ST.moisture,p=getSoilP(REGIONS[ST.region].soil),c=CROPS[ST.crop]||{};let txt='';
+  if(type==='add10'){const a=mAfterIrr(m,10,p),z=classify(a,p);txt=`Adding 10L → ${m}% → ${a}%\nZone: ${zLbl(z)}\n${a>p.safeMax?'⚠ Over-irrigation! Would exceed safe limit.':a<p.safeMin?'Still below safe zone — more water needed.':'✓ Would place field in safe zone.'}`}
+  else if(type==='add20'){const a=mAfterIrr(m,20,p),z=classify(a,p);txt=`Adding 20L → ${m}% → ${a}%\nZone: ${zLbl(z)}\n${a>p.high?'⚠ Heavy over-irrigation risk.':a>p.safeMax?'⚠ Slightly above optimal.':'✓ Within safe zone.'}`}
+  else if(type==='rain'){const mm=ST.rain>0?ST.rain:8,a=mAfterRain(m,mm,p),z=classify(a,p);txt=`Simulating ${mm}mm rainfall → ${m}% → ${a}%\nZone: ${zLbl(z)}\n${a>=p.safeMin&&a<=p.safeMax?'✓ Rainfall restores safe moisture. Skip irrigation.':a>p.high?'⚠ Rainfall would push into excess range. No irrigation.':'Rainfall insufficient — supplemental irrigation still needed.'}`}
+  else if(type==='skip'){const drop=Math.round(ST.et*0.5*10)/10,a=Math.max(0,Math.round((m-drop)*10)/10),z=classify(a,p);txt=`Skipping next cycle → drop of ${drop}% (ET ${ST.et}mm/day)\nPredicted: ${a}% → ${zLbl(z)}\n${a<p.low?'⚠ Skipping will cause water stress in '+(c.name||ST.crop)+'. Not recommended.':'✓ Safe to skip this cycle.'}`}
+  else if(type==='drain'){const a=Math.max(0,Math.round(m*0.62*10)/10),z=classify(a,p);txt=`Opening field drains → ${m}% → ~${a}%\nZone: ${zLbl(z)}\n${a<p.low?'Drainage below safe zone. Monitor and irrigate if needed.':'✓ Drainage restores safe moisture level.'}`}
+  document.getElementById('simText').textContent=txt;
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════════════════════════
+function initCharts(){
+  const ctx=document.getElementById('trendChart').getContext('2d');
+  trendChart=new Chart(ctx,{type:'line',data:{labels:['-10h','-9h','-8h','-7h','-6h','-5h','-4h','-3h','-2h','-1h','Now','+1h','+2h','+3h','+4h','+5h','+6h'],datasets:[{label:'Historical',data:[42,44,47,43,40,38,35,38,42,45,ST.moisture,null,null,null,null,null,null],borderColor:'#2d7a3a',backgroundColor:'rgba(45,122,58,0.07)',borderWidth:2,pointRadius:2.5,tension:0.4,fill:true},{label:'Predicted',data:[null,null,null,null,null,null,null,null,null,null,ST.moisture,null,null,null,null,null,null],borderColor:'#1a6fa8',backgroundColor:'rgba(26,111,168,0.06)',borderWidth:2,borderDash:[5,4],pointRadius:2,tension:0.4,fill:true},{label:'SafeMin',data:new Array(17).fill(31),borderColor:'rgba(201,124,10,0.35)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false},{label:'SafeMax',data:new Array(17).fill(70),borderColor:'rgba(201,124,10,0.35)',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1e1a10',titleColor:'#9a8e72',bodyColor:'#e4dfd2',borderColor:'rgba(80,60,20,0.2)',borderWidth:1,callbacks:{label:ctx=>ctx.parsed.y!=null&&ctx.dataset.label!=='SafeMin'&&ctx.dataset.label!=='SafeMax'?' '+ctx.parsed.y+'%':null}}},scales:{x:{ticks:{color:'#9a8e72',font:{size:9,family:"'DM Mono'"},maxRotation:0},grid:{color:'rgba(80,60,20,0.06)'}},y:{min:0,max:100,ticks:{color:'#9a8e72',font:{size:9},stepSize:25,callback:v=>v+'%'},grid:{color:'rgba(80,60,20,0.06)'}}}}});
+  const ctx2=document.getElementById('budgetChart').getContext('2d');
+  budgetChart=new Chart(ctx2,{type:'bar',data:{labels:MN,datasets:[{label:'Water demand',data:new Array(12).fill(5),backgroundColor:MN.map((_,i)=>i===new Date().getMonth()?'#2d7a3a':'rgba(45,122,58,0.35)'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#9a8e72',font:{size:9,family:"'DM Mono'"}},grid:{display:false}},y:{min:0,max:10,ticks:{color:'#9a8e72',font:{size:9},stepSize:2},grid:{color:'rgba(80,60,20,0.06)'}}}}});
+}
+function updateChart(m,pred,sMin,sMax){
+  if(!trendChart)return;
+  trendChart.data.datasets[0].data=[42,44,47,43,40,38,35,38,42,45,m,null,null,null,null,null,null];
+  trendChart.data.datasets[1].data=[null,null,null,null,null,null,null,null,null,null,m,...pred];
+  trendChart.data.datasets[2].data=new Array(17).fill(sMin);
+  trendChart.data.datasets[3].data=new Array(17).fill(sMax);
+  trendChart.update('none');
+}
+function updateBudgetChart(wd){
+  if(!budgetChart)return;
+  const cur=new Date().getMonth();
+  budgetChart.data.datasets[0].data=wd;
+  budgetChart.data.datasets[0].backgroundColor=wd.map((_,i)=>i===cur?'#2d7a3a':'rgba(45,122,58,0.35)');
+  budgetChart.update('none');
+}
+function onManualMoisture(){
+  ST.moisture=parseInt(document.getElementById('moistureSlider').value);runEngine();
+}
+function showLoading(msg){const o=document.getElementById('loadingOverlay');document.getElementById('loadingSub').textContent=msg||'';o.classList.remove('hidden')}
+function hideLoading(){document.getElementById('loadingOverlay').classList.add('hidden')}
+function updateClock(){document.getElementById('timeBadge').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'})+' IST'}
+document.addEventListener('DOMContentLoaded',()=>{initCharts();updateClock();setInterval(updateClock,30000);onRegionChange()});
+</script>
+</body>
+</html>
